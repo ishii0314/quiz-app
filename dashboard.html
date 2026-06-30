@@ -394,7 +394,7 @@ function renderAll(history){
 async function init(){
   document.getElementById('mainContent').innerHTML = '<div class="loading">データを読み込み中…</div>';
   try{
-    if(!GAS_API_URL || GAS_API_URL.indexOf('script.google.com') === -1fKA40U0EH__VaGnXWvh2m-A/exec'){
+    if(!GAS_API_URL || GAS_API_URL.indexOf('script.google.com') === -1){
       throw new Error('GAS_API_URLが設定されていません。dashboard.htmlの先頭にあるGAS_API_URLを書き換えてください。');
     }
     const history = await loadAll();
