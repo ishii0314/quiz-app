@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>類題演習 先生用ダッシュボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEFE9;
+  --ink:#21302C;
+  --teal:#2F5D55;
+  --teal-deep:#1E3F3A;
+  --clay:#D97A55;
+  --gold:#BD9A2E;
+  --line:#C7CDC2;
+  --card:#FAFAF6;
+  --danger:#B5483D;
+  --good:#3D7A52;
+  --warn:#C47C1A;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Noto Sans JP',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.app{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
+h1,h2,h3{font-family:'Noto Serif JP',serif;}
+
+/* ヘッダー */
+header{
+  border-bottom:3px solid var(--teal-deep);
+  padding-bottom:14px;
+  margin-bottom:28px;
+  display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+header h1{font-size:22px;color:var(--teal-deep);}
+header .badge{font-size:12px;color:#fff;background:var(--clay);padding:4px 12px;border-radius:3px;font-weight:700;}
+.updated{font-size:12px;color:#697066;margin-top:4px;}
+
+/* セクション */
+.section{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-left:5px solid var(--teal);
+  border-radius:2px;
+  margin-bottom:24px;
+  padding:20px 20px 22px;
+}
+.section h2{
+  font-size:15px;color:var(--teal-deep);
+  margin-bottom:16px;padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+}
+.section-label{
+  display:inline-block;
+  font-size:11px;letter-spacing:.06em;font-weight:700;
+  background:var(--teal-deep);color:#fff;
+  padding:2px 8px;border-radius:2px;margin-right:8px;
+}
+
+/* テーブル共通 */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{
+  background:var(--teal-deep);color:#fff;
+  padding:8px 10px;text-align:left;font-weight:700;font-size:12px;
+  letter-spacing:.03em;
+}
+td{padding:8px 10px;border-bottom:1px solid var(--line);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#F0F3ED;}
+.rank-num{
+  font-family:'Noto Serif JP',serif;
+  font-size:16px;font-weight:700;color:var(--teal-deep);
+  width:32px;text-align:center;
+}
+.rank-num.gold{color:#A07B10;}
+.rank-num.silver{color:#7A7A7A;}
+.rank-num.bronze{color:#8B5C2A;}
+
+/* バー */
+.bar-wrap{display:flex;align-items:center;gap:8px;}
+.bar-track{flex:1;height:10px;background:#E0E4DA;border-radius:5px;overflow:hidden;min-width:60px;}
+.bar-fill{height:100%;background:var(--teal);border-radius:5px;transition:.3s;}
+.bar-fill.warn{background:var(--warn);}
+.bar-fill.danger{background:var(--danger);}
+.bar-pct{font-size:12px;font-weight:700;color:var(--teal-deep);min-width:36px;text-align:right;}
+
+/* 生徒テーブル */
+.student-low td{background:#FDF5EC;}
+.student-low td:first-child::after{
+  content:'要確認';font-size:10px;color:var(--warn);font-weight:700;
+  display:block;margin-top:1px;
+}
+.badge-pct{
+  display:inline-block;font-size:12px;font-weight:700;
+  padding:2px 8px;border-radius:10px;
+}
+.badge-pct.good{background:#E3F1E6;color:#235732;}
+.badge-pct.mid{background:#FEF3DC;color:#7A4F00;}
+.badge-pct.low{background:#FBEAE7;color:#7d2a20;}
+
+/* ヒートマップ */
+.heatmap-wrap{overflow-x:auto;}
+.heatmap{border-collapse:collapse;font-size:12px;}
+.heatmap th{background:var(--teal-deep);color:#fff;padding:7px 12px;font-weight:700;white-space:nowrap;}
+.heatmap td{
+  padding:10px 14px;text-align:center;
+  border:1px solid var(--line);font-weight:700;font-size:13px;
+  white-space:nowrap;min-width:80px;
+}
+.heatmap td.no-data{color:#aaa;font-weight:400;font-size:11px;}
+.heatmap tr th:first-child{text-align:left;min-width:140px;}
+
+/* ローディング・エラー */
+.loading{text-align:center;padding:40px;color:var(--teal);font-weight:700;}
+.error-box{
+  background:#FBEAE7;border:1px solid var(--danger);border-radius:4px;
+  padding:14px 16px;color:#7d2a20;font-size:13px;line-height:1.6;
+}
+.empty{color:#8d958a;font-size:13px;padding:12px 0;text-align:center;}
+
+/* 概況カード */
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px;}
+.kpi{
+  flex:1;min-width:120px;
+  background:var(--paper);border:1px solid var(--line);border-radius:4px;
+  padding:14px 16px;text-align:center;
+}
+.kpi .val{font-family:'Noto Serif JP',serif;font-size:28px;color:var(--teal-deep);font-weight:700;}
+.kpi .lbl{font-size:11px;color:#697066;margin-top:2px;}
+
+/* 更新ボタン */
+.reload-btn{
+  display:inline-block;background:var(--teal-deep);color:#fff;
+  border:none;border-radius:4px;padding:8px 18px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;margin-top:16px;
+}
+.reload-btn:hover{background:var(--teal);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div>
+      <h1>類題演習 先生用ダッシュボード</h1>
+      <div class="updated" id="updatedAt"></div>
+    </div>
+    <span class="badge">教員専用</span>
+  </header>
+
+  <div id="mainContent">
+    <div class="loading">データを読み込み中…</div>
+  </div>
+
+</div>
+
+<script>
+// ===== ★ここを自分のGAS URLに書き換えてください =====
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyjkiwU1ci-8wi5BVflYOwPYvLfLpcY21mLZg37tOWEFfKA40U0EH__VaGnXWvh2m-A/exec';
+// =====================================================
+
+const DIFF_LABEL = {1:'★ 基本', 2:'◎ 標準', 3:'× 応用'};
+const DIFF_KEYS = [1, 2, 3];
+
+async function loadAll(){
+  const res = await fetch(`${GAS_API_URL}?type=allHistory`);
+  const data = await res.json();
+  if(!data.ok) throw new Error(data.error || '取得失敗');
+  return data.history;
+}
+
+function renderAll(history){
+  const now = new Date();
+  document.getElementById('updatedAt').textContent =
+    `最終更新：${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  // 生徒ごとに集約
+  const students = {};
+  history.forEach(h => {
+    const sid = h.studentId;
+    if(!students[sid]) students[sid] = { sessions:[], lastDate: null };
+    students[sid].sessions.push(h);
+    const d = new Date(h.date);
+    if(!students[sid].lastDate || d > students[sid].lastDate) students[sid].lastDate = d;
+  });
+
+  const studentList = Object.entries(students).map(([id, s]) => {
+    const totalQ = s.sessions.reduce((a,h)=>a+h.total,0);
+    const totalC = s.sessions.reduce((a,h)=>a+h.correct,0);
+    return { id, sessions: s.sessions.length, total: totalQ, correct: totalC, lastDate: s.lastDate };
+  }).sort((a,b) => b.sessions - a.sessions);
+
+  const totalSessions = history.length;
+  const totalStudents = studentList.length;
+  const avgPct = history.length
+    ? Math.round(history.reduce((a,h)=> a + (h.total ? h.correct/h.total : 0), 0) / history.length * 100)
+    : 0;
+
+  // キーワード集計
+  const kwWrong = {};
+  const kwWrongStudents = {};
+  history.forEach(h => {
+    const sid = h.studentId;
+    (h.wrongKeywords || []).forEach(k => {
+      kwWrong[k] = (kwWrong[k] || 0) + 1;
+      if(!kwWrongStudents[k]) kwWrongStudents[k] = new Set();
+      kwWrongStudents[k].add(sid);
+    });
+  });
+  const kwRanked = Object.keys(kwWrong).sort((a,b)=>kwWrong[b]-kwWrong[a]).slice(0,20);
+
+  // 科目集計
+  const subjAgg = {};
+  history.forEach(h => {
+    Object.keys(h.bySubject||{}).forEach(s => {
+      subjAgg[s] = subjAgg[s] || {c:0,t:0};
+      subjAgg[s].c += h.bySubject[s].c;
+      subjAgg[s].t += h.bySubject[s].t;
+    });
+  });
+
+  // 科目×難易度ヒートマップ集計
+  const heatAgg = {}; // key: "科目|難易度" -> {c,t}
+  history.forEach(h => {
+    Object.keys(h.bySubjectDiff||{}).forEach(key => {
+      heatAgg[key] = heatAgg[key] || {c:0,t:0};
+      heatAgg[key].c += h.bySubjectDiff[key].c;
+      heatAgg[key].t += h.bySubjectDiff[key].t;
+    });
+  });
+  const heatSubjects = Object.keys(subjAgg).sort((a,b)=>subjAgg[b].t - subjAgg[a].t);
+
+  // ===== 描画 =====
+  document.getElementById('mainContent').innerHTML = `
+
+    <!-- 概況 -->
+    <div class="section">
+      <h2><span class="section-label">概況</span>クラス全体</h2>
+      <div class="kpi-row">
+        <div class="kpi"><div class="val">${totalStudents}</div><div class="lbl">利用生徒数</div></div>
+        <div class="kpi"><div class="val">${totalSessions}</div><div class="lbl">総演習回数</div></div>
+        <div class="kpi"><div class="val">${avgPct}%</div><div class="lbl">クラス平均正答率</div></div>
+      </div>
+    </div>
+
+    <!-- キーワード別誤答ランキング -->
+    <div class="section">
+      <h2><span class="section-label">誤答</span>キーワード別 誤答ランキング TOP20</h2>
+      ${kwRanked.length === 0
+        ? '<div class="empty">まだデータがありません</div>'
+        : `<table>
+            <thead><tr>
+              <th style="width:40px">順位</th>
+              <th>キーワード</th>
+              <th style="width:120px">誤答回数</th>
+              <th style="width:120px">間違えた生徒数</th>
+            </tr></thead>
+            <tbody>
+              ${kwRanked.map((k,i) => {
+                const cnt = kwWrong[k];
+                const maxCnt = kwWrong[kwRanked[0]];
+                const pct = Math.round(cnt/maxCnt*100);
+                const students = kwWrongStudents[k].size;
+                const rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+                return `<tr>
+                  <td><div class="rank-num ${rankClass}">${i+1}</div></td>
+                  <td>${k}</td>
+                  <td>
+                    <div class="bar-wrap">
+                      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+                      <div class="bar-pct">${cnt}回</div>
+                    </div>
+                  </td>
+                  <td style="font-weight:700;color:var(--teal-deep)">${students}人</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`
+      }
+    </div>
+
+    <!-- 生徒別利用状況 -->
+    <div class="section">
+      <h2><span class="section-label">生徒</span>生徒別 利用状況</h2>
+      <p style="font-size:12px;color:#697066;margin-bottom:12px;">演習回数が2回以下の生徒は<span style="color:var(--warn);font-weight:700;">要確認</span>として表示しています。</p>
+      ${studentList.length === 0
+        ? '<div class="empty">まだデータがありません</div>'
+        : `<table>
+            <thead><tr>
+              <th>記録名</th>
+              <th style="width:80px;text-align:center">演習回数</th>
+              <th style="width:80px;text-align:center">解答問題数</th>
+              <th style="width:160px">全体正答率</th>
+              <th style="width:110px">最終利用日</th>
+            </tr></thead>
+            <tbody>
+              ${studentList.map(s => {
+                const pct = s.total ? Math.round(s.correct/s.total*100) : 0;
+                const pctClass = pct >= 70 ? 'good' : pct >= 50 ? 'mid' : 'low';
+                const barClass = pct >= 70 ? '' : pct >= 50 ? 'warn' : 'danger';
+                const lastD = s.lastDate;
+                const lastStr = lastD
+                  ? `${lastD.getMonth()+1}/${lastD.getDate()}`
+                  : '—';
+                const isLow = s.sessions <= 2;
+                return `<tr class="${isLow?'student-low':''}">
+                  <td>${s.id}</td>
+                  <td style="text-align:center;font-weight:700">${s.sessions}回</td>
+                  <td style="text-align:center">${s.total}問</td>
+                  <td>
+                    <div class="bar-wrap">
+                      <div class="bar-track"><div class="bar-fill ${barClass}" style="width:${pct}%"></div></div>
+                      <span class="badge-pct ${pctClass}">${pct}%</span>
+                    </div>
+                  </td>
+                  <td style="color:#697066;font-size:12px">${lastStr}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`
+      }
+    </div>
+
+    <!-- 科目別クラス平均正答率 -->
+    <div class="section">
+      <h2><span class="section-label">科目</span>科目別 クラス平均正答率</h2>
+      ${Object.keys(subjAgg).length === 0
+        ? '<div class="empty">まだデータがありません</div>'
+        : Object.keys(subjAgg).sort((a,b)=>subjAgg[b].t-subjAgg[a].t).map(s => {
+            const {c,t} = subjAgg[s];
+            const pct = t ? Math.round(c/t*100) : 0;
+            const barClass = pct >= 70 ? '' : pct >= 50 ? 'warn' : 'danger';
+            return `<div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+                <span>${s}</span><span style="color:#697066;font-size:12px">${t}問</span>
+              </div>
+              <div class="bar-wrap">
+                <div class="bar-track" style="height:14px">
+                  <div class="bar-fill ${barClass}" style="width:${pct}%;height:100%"></div>
+                </div>
+                <div class="bar-pct" style="font-size:14px">${pct}%</div>
+              </div>
+            </div>`;
+          }).join('')
+      }
+    </div>
+
+    <!-- 科目×難易度ヒートマップ -->
+    <div class="section">
+      <h2><span class="section-label">ヒートマップ</span>科目 × 難易度 正答率</h2>
+      <p style="font-size:12px;color:#697066;margin-bottom:12px;">
+        ★基本：難易度1 / ◎標準：難易度2 / ×応用：難易度3　（色：<span style="color:var(--good);font-weight:700;">■</span> 70%以上 / <span style="color:var(--warn);font-weight:700;">■</span> 50〜69% / <span style="color:var(--danger);font-weight:700;">■</span> 50%未満）
+      </p>
+      ${heatSubjects.length === 0
+        ? '<div class="empty">まだデータがありません</div>'
+        : `<div class="heatmap-wrap">
+            <table class="heatmap">
+              <thead><tr>
+                <th>科目</th>
+                ${DIFF_KEYS.map(d=>`<th>${DIFF_LABEL[d]}</th>`).join('')}
+              </tr></thead>
+              <tbody>
+                ${heatSubjects.map(subj => {
+                  return `<tr>
+                    <th style="font-weight:700;background:#F0F3ED;color:var(--teal-deep);text-align:left;">${subj}</th>
+                    ${DIFF_KEYS.map(d => {
+                      const key = `${subj}|${d}`;
+                      const agg = heatAgg[key];
+                      if(!agg || agg.t === 0) return `<td class="no-data">—</td>`;
+                      const pct = Math.round(agg.c/agg.t*100);
+                      const bg = pct >= 70 ? '#E3F1E6' : pct >= 50 ? '#FEF3DC' : '#FBEAE7';
+                      const col = pct >= 70 ? '#235732' : pct >= 50 ? '#7A4F00' : '#7d2a20';
+                      return `<td style="background:${bg};color:${col};">${pct}%<br><span style="font-size:10px;font-weight:400;">${agg.t}問</span></td>`;
+                    }).join('')}
+                  </tr>`;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>`
+      }
+    </div>
+
+    <div style="text-align:center">
+      <button class="reload-btn" onclick="init()">データを更新する</button>
+    </div>
+  `;
+}
+
+async function init(){
+  document.getElementById('mainContent').innerHTML = '<div class="loading">データを読み込み中…</div>';
+  try{
+    if(!GAS_API_URL || GAS_API_URL === 'https://script.google.com/macros/s/AKfycbyjkiwU1ci-8wi5BVflYOwPYvLfLpcY21mLZg37tOWEFfKA40U0EH__VaGnXWvh2m-A/exec'){
+      throw new Error('GAS_API_URLが設定されていません。dashboard.htmlの先頭にあるGAS_API_URLを書き換えてください。');
+    }
+    const history = await loadAll();
+    renderAll(history);
+  }catch(e){
+    document.getElementById('mainContent').innerHTML =
+      `<div class="error-box">⚠️ データの取得に失敗しました。<br>${e.message}<br><br>・GAS_API_URLが正しいか確認してください<br>・GASが正しくデプロイされているか確認してください（?type=pingで確認可能）</div>
+       <div style="text-align:center"><button class="reload-btn" onclick="init()" style="margin-top:16px">再試行</button></div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
