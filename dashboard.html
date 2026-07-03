@@ -8,17 +8,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#EDEFE9;
-  --ink:#21302C;
-  --teal:#2F5D55;
-  --teal-deep:#1E3F3A;
-  --clay:#D97A55;
-  --gold:#BD9A2E;
-  --line:#C7CDC2;
-  --card:#FAFAF6;
+  --paper:#F0EEE6;      /* Claude風アイボリー背景 */
+  --ink:#1F1E1D;        /* 温かみのある墨色 */
+  --teal:#C6613F;       /* メインアクセント：テラコッタ */
+  --teal-deep:#3D3929;  /* 濃色：ウォームダークスレート */
+  --clay:#D97757;       /* 明るいテラコッタ（バッジ） */
+  --gold:#A98A47;       /* 落ち着いたゴールド */
+  --line:#E2DCCE;       /* 温かみのある罫線 */
+  --card:#FAF9F5;       /* カード背景（生成り白） */
   --danger:#B5483D;
-  --good:#3D7A52;
-  --warn:#C47C1A;
+  --good:#5E7C4E;
+  --warn:#B07818;
+  --muted:#6E6A5E;
+  --muted2:#94907F;
+  --soft:#E9E4D6;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{
@@ -27,119 +30,124 @@ body{
   font-family:'Noto Sans JP',sans-serif;
   -webkit-font-smoothing:antialiased;
 }
-.app{max-width:900px;margin:0 auto;padding:24px 16px 80px;}
+.app{max-width:900px;margin:0 auto;padding:26px 16px 80px;}
 h1,h2,h3{font-family:'Noto Serif JP',serif;}
 
 /* ヘッダー */
 header{
-  border-bottom:3px solid var(--teal-deep);
-  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
+  padding-bottom:16px;
   margin-bottom:28px;
   display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;
 }
-header h1{font-size:22px;color:var(--teal-deep);}
-header .badge{font-size:12px;color:#fff;background:var(--clay);padding:4px 12px;border-radius:3px;font-weight:700;}
-.updated{font-size:12px;color:#697066;margin-top:4px;}
+header h1{font-size:23px;color:var(--ink);}
+header .badge{font-size:12px;color:#fff;background:var(--clay);padding:5px 14px;border-radius:999px;font-weight:700;}
+.updated{font-size:12px;color:var(--muted);margin-top:5px;}
 
 /* セクション */
 .section{
   background:var(--card);
   border:1px solid var(--line);
-  border-left:5px solid var(--teal);
-  border-radius:2px;
+  border-radius:16px;
+  box-shadow:0 1px 3px rgba(63,57,41,.05);
   margin-bottom:24px;
-  padding:20px 20px 22px;
+  padding:24px 22px;
 }
 .section h2{
-  font-size:15px;color:var(--teal-deep);
-  margin-bottom:16px;padding-bottom:8px;
+  font-size:16px;color:var(--ink);
+  margin-bottom:18px;padding-bottom:10px;
   border-bottom:1px solid var(--line);
+  font-weight:600;
 }
 .section-label{
   display:inline-block;
   font-size:11px;letter-spacing:.06em;font-weight:700;
-  background:var(--teal-deep);color:#fff;
-  padding:2px 8px;border-radius:2px;margin-right:8px;
+  background:var(--teal);color:#fff;
+  padding:3px 11px;border-radius:999px;margin-right:9px;
+  font-family:'Noto Sans JP',sans-serif;
+  vertical-align:2px;
 }
 
 /* テーブル共通 */
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{
-  background:var(--teal-deep);color:#fff;
-  padding:8px 10px;text-align:left;font-weight:700;font-size:12px;
-  letter-spacing:.03em;
+  background:transparent;color:var(--muted);
+  padding:8px 10px;text-align:left;font-weight:700;font-size:11.5px;
+  letter-spacing:.04em;border-bottom:2px solid #D8D2C2;
 }
-td{padding:8px 10px;border-bottom:1px solid var(--line);}
+td{padding:9px 10px;border-bottom:1px solid #ECE7DA;}
 tr:last-child td{border-bottom:none;}
-tr:hover td{background:#F0F3ED;}
+tr:hover td{background:#F3EFE3;}
 .rank-num{
   font-family:'Noto Serif JP',serif;
-  font-size:16px;font-weight:700;color:var(--teal-deep);
+  font-size:16px;font-weight:700;color:var(--teal);
   width:32px;text-align:center;
 }
 .rank-num.gold{color:#A07B10;}
-.rank-num.silver{color:#7A7A7A;}
+.rank-num.silver{color:#8A867B;}
 .rank-num.bronze{color:#8B5C2A;}
 
 /* バー */
 .bar-wrap{display:flex;align-items:center;gap:8px;}
-.bar-track{flex:1;height:10px;background:#E0E4DA;border-radius:5px;overflow:hidden;min-width:60px;}
-.bar-fill{height:100%;background:var(--teal);border-radius:5px;transition:.3s;}
-.bar-fill.warn{background:var(--warn);}
+.bar-track{flex:1;height:10px;background:var(--soft);border-radius:999px;overflow:hidden;min-width:60px;}
+.bar-fill{height:100%;background:var(--teal);border-radius:999px;transition:.3s;}
+.bar-fill.warn{background:#D29B3C;}
 .bar-fill.danger{background:var(--danger);}
-.bar-pct{font-size:12px;font-weight:700;color:var(--teal-deep);min-width:36px;text-align:right;}
+.bar-pct{font-size:12px;font-weight:700;color:var(--ink);min-width:36px;text-align:right;}
 
 /* 生徒テーブル */
-.student-low td{background:#FDF5EC;}
+.student-low td{background:#F8EFDC;}
 .student-low td:first-child::after{
   content:'要確認';font-size:10px;color:var(--warn);font-weight:700;
   display:block;margin-top:1px;
 }
 .badge-pct{
   display:inline-block;font-size:12px;font-weight:700;
-  padding:2px 8px;border-radius:10px;
+  padding:2px 10px;border-radius:999px;
 }
-.badge-pct.good{background:#E3F1E6;color:#235732;}
-.badge-pct.mid{background:#FEF3DC;color:#7A4F00;}
-.badge-pct.low{background:#FBEAE7;color:#7d2a20;}
+.badge-pct.good{background:#E2EAD7;color:#40602F;}
+.badge-pct.mid{background:#F5E9C9;color:#7C5A16;}
+.badge-pct.low{background:#F6DFD4;color:#8E3A28;}
 
 /* ヒートマップ */
 .heatmap-wrap{overflow-x:auto;}
 .heatmap{border-collapse:collapse;font-size:12px;}
-.heatmap th{background:var(--teal-deep);color:#fff;padding:7px 12px;font-weight:700;white-space:nowrap;}
+.heatmap th{background:#EFEBE0;color:#57534A;padding:8px 12px;font-weight:700;white-space:nowrap;border:2px solid var(--card);border-radius:0;}
 .heatmap td{
   padding:10px 14px;text-align:center;
-  border:1px solid var(--line);font-weight:700;font-size:13px;
+  border:2px solid var(--card);font-weight:700;font-size:13px;
   white-space:nowrap;min-width:80px;
 }
-.heatmap td.no-data{color:#aaa;font-weight:400;font-size:11px;}
+.heatmap td.no-data{color:#B4AF9F;background:#F1EDE2;font-weight:400;font-size:11px;}
 .heatmap tr th:first-child{text-align:left;min-width:140px;}
+.heatmap tr:hover td{background:transparent;}
+.heatmap tr:hover td.no-data{background:#F1EDE2;}
 
 /* ローディング・エラー */
 .loading{text-align:center;padding:40px;color:var(--teal);font-weight:700;}
 .error-box{
-  background:#FBEAE7;border:1px solid var(--danger);border-radius:4px;
-  padding:14px 16px;color:#7d2a20;font-size:13px;line-height:1.6;
+  background:#F6DFD4;border:1px solid var(--danger);border-radius:12px;
+  padding:14px 16px;color:#8E3A28;font-size:13px;line-height:1.6;
 }
-.empty{color:#8d958a;font-size:13px;padding:12px 0;text-align:center;}
+.empty{color:var(--muted2);font-size:13px;padding:12px 0;text-align:center;}
 
 /* 概況カード */
 .kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:4px;}
 .kpi{
   flex:1;min-width:120px;
-  background:var(--paper);border:1px solid var(--line);border-radius:4px;
-  padding:14px 16px;text-align:center;
+  background:#F4F1E8;border:1px solid var(--line);border-radius:14px;
+  padding:16px;text-align:center;
 }
-.kpi .val{font-family:'Noto Serif JP',serif;font-size:28px;color:var(--teal-deep);font-weight:700;}
-.kpi .lbl{font-size:11px;color:#697066;margin-top:2px;}
+.kpi .val{font-family:'Noto Serif JP',serif;font-size:30px;color:var(--teal);font-weight:700;}
+.kpi .lbl{font-size:11px;color:var(--muted);margin-top:3px;}
 
 /* 更新ボタン */
 .reload-btn{
-  display:inline-block;background:var(--teal-deep);color:#fff;
-  border:none;border-radius:4px;padding:8px 18px;font-size:13px;font-weight:700;
-  cursor:pointer;font-family:inherit;margin-top:16px;
+  display:inline-block;background:var(--teal);color:#fff;
+  border:none;border-radius:999px;padding:10px 24px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;margin-top:16px;transition:.15s;
 }
-.reload-btn:hover{background:var(--teal);}
+.reload-btn:hover{background:#B0532F;}
 </style>
 </head>
 <body>
@@ -276,7 +284,7 @@ function renderAll(history){
                       <div class="bar-pct">${cnt}回</div>
                     </div>
                   </td>
-                  <td style="font-weight:700;color:var(--teal-deep)">${students}人</td>
+                  <td style="font-weight:700;color:var(--teal)">${students}人</td>
                 </tr>`;
               }).join('')}
             </tbody>
@@ -287,7 +295,7 @@ function renderAll(history){
     <!-- 生徒別利用状況 -->
     <div class="section">
       <h2><span class="section-label">生徒</span>生徒別 利用状況</h2>
-      <p style="font-size:12px;color:#697066;margin-bottom:12px;">演習回数が2回以下の生徒は<span style="color:var(--warn);font-weight:700;">要確認</span>として表示しています。</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">演習回数が2回以下の生徒は<span style="color:var(--warn);font-weight:700;">要確認</span>として表示しています。</p>
       ${studentList.length === 0
         ? '<div class="empty">まだデータがありません</div>'
         : `<table>
@@ -318,7 +326,7 @@ function renderAll(history){
                       <span class="badge-pct ${pctClass}">${pct}%</span>
                     </div>
                   </td>
-                  <td style="color:#697066;font-size:12px">${lastStr}</td>
+                  <td style="color:var(--muted);font-size:12px">${lastStr}</td>
                 </tr>`;
               }).join('')}
             </tbody>
@@ -337,7 +345,7 @@ function renderAll(history){
             const barClass = pct >= 70 ? '' : pct >= 50 ? 'warn' : 'danger';
             return `<div style="margin-bottom:10px;">
               <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
-                <span>${s}</span><span style="color:#697066;font-size:12px">${t}問</span>
+                <span>${s}</span><span style="color:var(--muted);font-size:12px">${t}問</span>
               </div>
               <div class="bar-wrap">
                 <div class="bar-track" style="height:14px">
@@ -353,7 +361,7 @@ function renderAll(history){
     <!-- 科目×難易度ヒートマップ -->
     <div class="section">
       <h2><span class="section-label">ヒートマップ</span>科目 × 難易度 正答率</h2>
-      <p style="font-size:12px;color:#697066;margin-bottom:12px;">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
         ★基本：難易度1 / ◎標準：難易度2 / ×応用：難易度3　（色：<span style="color:var(--good);font-weight:700;">■</span> 70%以上 / <span style="color:var(--warn);font-weight:700;">■</span> 50〜69% / <span style="color:var(--danger);font-weight:700;">■</span> 50%未満）
       </p>
       ${heatSubjects.length === 0
@@ -367,14 +375,14 @@ function renderAll(history){
               <tbody>
                 ${heatSubjects.map(subj => {
                   return `<tr>
-                    <th style="font-weight:700;background:#F0F3ED;color:var(--teal-deep);text-align:left;">${subj}</th>
+                    <th style="font-weight:700;background:#EFEBE0;color:var(--ink);text-align:left;">${subj}</th>
                     ${DIFF_KEYS.map(d => {
                       const key = `${subj}|${d}`;
                       const agg = heatAgg[key];
                       if(!agg || agg.t === 0) return `<td class="no-data">—</td>`;
                       const pct = Math.round(agg.c/agg.t*100);
-                      const bg = pct >= 70 ? '#E3F1E6' : pct >= 50 ? '#FEF3DC' : '#FBEAE7';
-                      const col = pct >= 70 ? '#235732' : pct >= 50 ? '#7A4F00' : '#7d2a20';
+                      const bg = pct >= 70 ? '#E2EAD7' : pct >= 50 ? '#F5E9C9' : '#F6DFD4';
+                      const col = pct >= 70 ? '#40602F' : pct >= 50 ? '#7C5A16' : '#8E3A28';
                       return `<td style="background:${bg};color:${col};">${pct}%<br><span style="font-size:10px;font-weight:400;">${agg.t}問</span></td>`;
                     }).join('')}
                   </tr>`;

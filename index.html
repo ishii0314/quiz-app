@@ -8,16 +8,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#EDEFE9;
-  --ink:#21302C;
-  --teal:#2F5D55;
-  --teal-deep:#1E3F3A;
-  --clay:#D97A55;
-  --gold:#BD9A2E;
-  --line:#C7CDC2;
-  --card:#FAFAF6;
+  --paper:#F0EEE6;      /* Claude風アイボリー背景 */
+  --ink:#1F1E1D;        /* 温かみのある墨色 */
+  --teal:#C6613F;       /* メインアクセント：テラコッタ */
+  --teal-deep:#3D3929;  /* 濃色：ウォームダークスレート */
+  --clay:#D97757;       /* 明るいテラコッタ（バッジ） */
+  --gold:#A98A47;       /* 落ち着いたゴールド */
+  --line:#E2DCCE;       /* 温かみのある罫線 */
+  --card:#FAF9F5;       /* カード背景（生成り白） */
   --danger:#B5483D;
-  --good:#3D7A52;
+  --good:#5E7C4E;
+  --muted:#6E6A5E;
+  --muted2:#94907F;
+  --soft:#E9E4D6;       /* バー背景などのソフト面 */
 }
 *{box-sizing:border-box;}
 body{
@@ -27,246 +30,253 @@ body{
   font-family:'Noto Sans JP',sans-serif;
   -webkit-font-smoothing:antialiased;
 }
-.app{max-width:720px;margin:0 auto;padding:18px 16px 60px;}
+.app{max-width:720px;margin:0 auto;padding:20px 16px 60px;}
 h1,h2,h3{font-family:'Noto Serif JP',serif;margin:0;}
 .eyebrow{
-  font-size:11px;letter-spacing:.12em;color:var(--teal);
+  font-size:11px;letter-spacing:.14em;color:var(--teal);
   font-weight:700;text-transform:uppercase;margin-bottom:4px;
 }
 header.top{
   display:flex;align-items:baseline;justify-content:space-between;
-  border-bottom:3px solid var(--teal-deep);
-  padding-bottom:12px;margin-bottom:18px;
+  border-bottom:1px solid var(--line);
+  padding-bottom:14px;margin-bottom:22px;
 }
-header.top h1{font-size:21px;color:var(--teal-deep);font-weight:700;}
+header.top h1{font-size:22px;color:var(--ink);font-weight:700;}
 header.top .badge{
   font-size:12px;color:#fff;background:var(--clay);
-  padding:4px 10px;border-radius:3px;font-weight:700;
+  padding:5px 13px;border-radius:999px;font-weight:700;
 }
 .screen{display:none;}
 .screen.active{display:block;}
 
-/* ---- 設定画面（カルテ風タブカード） ---- */
+/* ---- 設定画面（カード） ---- */
 .chart-card{
   background:var(--card);
   border:1px solid var(--line);
-  border-radius:2px;
-  box-shadow:0 1px 0 var(--line);
-  margin-bottom:16px;
+  border-radius:16px;
+  box-shadow:0 1px 3px rgba(63,57,41,.05);
+  margin-bottom:20px;
   position:relative;
-  padding:16px 16px 18px 20px;
-  border-left:5px solid var(--teal);
+  padding:22px 18px 20px;
 }
 .chart-card .tab-label{
-  position:absolute;top:-10px;left:14px;
-  background:var(--teal-deep);color:#fff;
+  position:absolute;top:-11px;left:16px;
+  background:var(--teal);color:#fff;
   font-size:11px;letter-spacing:.06em;
-  padding:3px 10px;border-radius:2px;
+  padding:3px 12px;border-radius:999px;
   font-weight:700;
 }
-.chart-card h3{font-size:14px;color:var(--teal-deep);margin-bottom:10px;margin-top:4px;}
+.chart-card h3{font-size:15px;color:var(--ink);margin-bottom:12px;margin-top:2px;}
 
-.chip-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;}
 .chip{
   border:1px solid var(--line);background:#fff;color:var(--ink);
-  font-size:13px;padding:7px 12px;border-radius:16px;cursor:pointer;
+  font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;
   user-select:none;transition:.15s;
 }
+.chip:hover{border-color:var(--teal);}
 .chip.on{background:var(--teal);border-color:var(--teal);color:#fff;}
-.chip .cnt{opacity:.65;font-size:11px;margin-left:3px;}
+.chip .cnt{opacity:.6;font-size:11px;margin-left:3px;}
 
 .diff-row{display:flex;gap:8px;}
 .diff-chip{
   flex:1;text-align:center;border:1px solid var(--line);background:#fff;
-  padding:10px 6px;border-radius:4px;cursor:pointer;font-size:13px;font-weight:700;
+  padding:10px 6px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:700;
+  transition:.15s;
 }
 .diff-chip small{display:block;font-weight:400;font-size:10.5px;opacity:.7;margin-top:2px;}
-.diff-chip[data-d="1"].on{background:#F4E9C2;border-color:var(--gold);color:#6b551a;}
-.diff-chip[data-d="2"].on{background:#F7DCCB;border-color:var(--clay);color:#7a3a1f;}
-.diff-chip[data-d="3"].on{background:#EFD3CF;border-color:var(--danger);color:#7a261d;}
+.diff-chip.on{background:var(--teal);border-color:var(--teal);color:#fff;}
+.diff-chip[data-d="1"].on{background:#F0E7CC;border-color:var(--gold);color:#6B5A24;}
+.diff-chip[data-d="2"].on{background:#F4DFD3;border-color:var(--clay);color:#8E3A28;}
+.diff-chip[data-d="3"].on{background:#F1D8D2;border-color:var(--danger);color:#8E3A28;}
 
 .kw-input{
-  width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:4px;
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
   font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
 }
-.kw-input::placeholder{color:#8d958a;}
+.kw-input:focus{outline:2px solid rgba(198,97,63,.3);border-color:var(--teal);}
+.kw-input::placeholder{color:var(--muted2);}
 .kw-suggest{
   position:relative;background:#fff;border:1px solid var(--line);border-top:none;
-  border-radius:0 0 4px 4px;max-height:180px;overflow-y:auto;display:none;
+  border-radius:0 0 10px 10px;max-height:180px;overflow-y:auto;display:none;
 }
 .kw-suggest.open{display:block;}
 .kw-suggest .item{
   padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;
 }
-.kw-suggest .item:hover{background:#EDF1E9;}
-.kw-suggest .item .cnt{color:#8d958a;font-size:11.5px;}
+.kw-suggest .item:hover{background:#F1EDE1;}
+.kw-suggest .item .cnt{color:var(--muted2);font-size:11.5px;}
 .kw-selected-chip{
   border:1px solid var(--teal);background:var(--teal);color:#fff;
-  font-size:12.5px;padding:6px 8px 6px 12px;border-radius:14px;display:flex;align-items:center;gap:6px;
+  font-size:12.5px;padding:6px 8px 6px 12px;border-radius:999px;display:flex;align-items:center;gap:6px;
 }
 .kw-selected-chip .x{cursor:pointer;font-weight:700;opacity:.85;}
 
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #E4E6DF;}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #ECE7DA;}
 .toggle-row:last-child{border-bottom:none;}
 .toggle-row .label{font-size:13.5px;}
-.toggle-row .desc{font-size:11.5px;color:#697066;margin-top:1px;}
+.toggle-row .desc{font-size:11.5px;color:var(--muted);margin-top:1px;}
 .switch{position:relative;width:42px;height:24px;flex-shrink:0;}
 .switch input{opacity:0;width:0;height:0;}
-.slider{position:absolute;inset:0;background:#C7CDC2;border-radius:14px;cursor:pointer;transition:.15s;}
+.slider{position:absolute;inset:0;background:#CFC9B9;border-radius:14px;cursor:pointer;transition:.15s;}
 .slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
 input:checked + .slider{background:var(--teal);}
 input:checked + .slider:before{transform:translateX(18px);}
 
 .count-row{display:flex;align-items:center;gap:10px;}
-.count-row input[type=range]{flex:1;}
+.count-row input[type=range]{flex:1;accent-color:var(--teal);}
 .count-num{
-  min-width:46px;text-align:center;font-weight:700;color:var(--teal-deep);
-  font-size:16px;background:#fff;border:1px solid var(--line);border-radius:4px;padding:5px 0;
+  min-width:46px;text-align:center;font-weight:700;color:var(--teal);
+  font-size:16px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px 0;
 }
 
-.hint{font-size:11.5px;color:#697066;margin-top:8px;line-height:1.5;}
+.hint{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
 .matchcount{
-  font-size:13px;color:var(--teal-deep);font-weight:700;margin:14px 0 8px;
+  font-size:13px;color:var(--ink);font-weight:700;margin:16px 0 10px;
   display:flex;align-items:center;gap:6px;
 }
-.matchcount .n{font-size:20px;font-family:'Noto Serif JP',serif;}
+.matchcount .n{font-size:22px;font-family:'Noto Serif JP',serif;color:var(--teal);}
 
 .btn{
-  display:block;width:100%;text-align:center;padding:14px;border:none;border-radius:4px;
+  display:block;width:100%;text-align:center;padding:14px;border:none;border-radius:12px;
   font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
-  letter-spacing:.02em;
+  letter-spacing:.02em;transition:.15s;
 }
-.btn-primary{background:var(--teal-deep);color:#fff;}
-.btn-primary:disabled{background:#9aa39a;cursor:not-allowed;}
-.btn-secondary{background:#fff;color:var(--teal-deep);border:1.5px solid var(--teal-deep);margin-top:8px;}
-.btn-ghost{background:transparent;color:var(--teal-deep);border:1px solid var(--line);margin-top:8px;font-weight:500;}
+.btn-primary{background:var(--teal);color:#fff;}
+.btn-primary:hover{background:#B0532F;}
+.btn-primary:disabled{background:#C9C3B4;cursor:not-allowed;}
+.btn-secondary{background:#fff;color:var(--ink);border:1.5px solid var(--teal-deep);margin-top:8px;}
+.btn-secondary:hover{background:var(--card);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:8px;font-weight:500;}
+.btn-ghost:hover{border-color:var(--muted2);}
 
 /* ---- 出題画面 ---- */
 .quiz-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.progress-text{font-size:12.5px;color:#697066;font-weight:700;}
-.progress-bar{height:5px;background:#dfe3da;border-radius:3px;overflow:hidden;margin-bottom:16px;}
+.progress-text{font-size:12.5px;color:var(--muted);font-weight:700;}
+.progress-bar{height:6px;background:var(--soft);border-radius:999px;overflow:hidden;margin-bottom:16px;}
 .progress-fill{height:100%;background:var(--teal);transition:.25s;}
 
 .q-card{
-  background:var(--card);border:1px solid var(--line);border-left:6px solid var(--teal);
-  border-radius:2px;padding:18px 18px 20px;position:relative;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:20px 18px 22px;position:relative;
+  box-shadow:0 1px 3px rgba(63,57,41,.05);
 }
-.q-card.stamp-star{border-left-color:var(--gold);}
-.q-card.stamp-circle{border-left-color:var(--clay);}
-.q-card.stamp-x{border-left-color:var(--danger);}
 .q-meta{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.q-subject{font-size:11.5px;color:var(--teal-deep);font-weight:700;background:#E2E8DE;padding:3px 9px;border-radius:10px;}
+.q-subject{font-size:11.5px;color:#9C4A2E;font-weight:700;background:#F4E3D8;padding:3px 11px;border-radius:999px;}
 .q-stamp{
   font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;
-  border:2px solid;border-radius:3px;padding:2px 8px;transform:rotate(-4deg);opacity:.85;
+  border:2px solid;border-radius:6px;padding:2px 8px;transform:rotate(-4deg);opacity:.85;
 }
 .q-stamp.star{color:var(--gold);border-color:var(--gold);}
 .q-stamp.circle{color:var(--clay);border-color:var(--clay);}
 .q-stamp.x{color:var(--danger);border-color:var(--danger);}
-.q-text{font-size:15.5px;line-height:1.75;margin-bottom:16px;white-space:pre-wrap;}
+.q-text{font-size:15.5px;line-height:1.8;margin-bottom:16px;white-space:pre-wrap;}
 
 .choice{
-  display:flex;align-items:flex-start;gap:10px;padding:11px 12px;margin-bottom:8px;
-  border:1px solid var(--line);border-radius:4px;background:#fff;cursor:pointer;font-size:14px;line-height:1.55;
+  display:flex;align-items:flex-start;gap:10px;padding:12px;margin-bottom:8px;
+  border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-size:14px;line-height:1.55;
+  transition:.12s;
 }
 .choice .num{
   flex-shrink:0;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);
-  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#697066;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);
 }
 .choice:hover{border-color:var(--teal);}
-.choice.selected{border-color:var(--teal);background:#E9EFE6;}
-.choice.correct{border-color:var(--good);background:#E3F1E6;}
+.choice.selected{border-color:var(--teal);background:#F6E7DE;}
+.choice.selected .num{border-color:var(--teal);color:var(--teal);}
+.choice.correct{border-color:var(--good);background:#E7EDDC;}
 .choice.correct .num{background:var(--good);color:#fff;border-color:var(--good);}
-.choice.wrong{border-color:var(--danger);background:#FBEAE7;}
+.choice.wrong{border-color:var(--danger);background:#F7E1DA;}
 .choice.wrong .num{background:var(--danger);color:#fff;border-color:var(--danger);}
 .choice.disabled{cursor:default;}
 
 .free-input{
-  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:4px;
+  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
   font-size:14px;font-family:inherit;margin-bottom:10px;background:#fff;
 }
 .reveal-area{
-  background:#fff;border:1px dashed var(--line);border-radius:4px;padding:12px 14px;margin-top:6px;
+  background:#fff;border:1px dashed #D8D2C2;border-radius:10px;padding:12px 14px;margin-top:6px;
 }
 .reveal-area .ans{color:var(--good);font-weight:700;margin-bottom:4px;}
 
 .feedback{
-  margin-top:14px;padding:12px 14px;border-radius:4px;font-size:13.5px;line-height:1.6;
+  margin-top:14px;padding:12px 14px;border-radius:12px;font-size:13.5px;line-height:1.6;
 }
-.feedback.ok{background:#E3F1E6;color:#235732;}
-.feedback.ng{background:#FBEAE7;color:#7d2a20;}
-.feedback .kw{display:inline-block;background:rgba(0,0,0,.06);border-radius:10px;padding:1px 8px;font-size:11.5px;margin:4px 4px 0 0;}
+.feedback.ok{background:#E7EDDC;color:#445D33;}
+.feedback.ng{background:#F7E1DA;color:#8E3A28;}
+.feedback .kw,#feedbackArea .kw{display:inline-block;background:rgba(63,57,41,.07);color:#57534A;border-radius:999px;padding:2px 10px;font-size:11.5px;margin:4px 4px 0 0;}
 
 .nav-row{display:flex;gap:10px;margin-top:16px;}
 .nav-row .btn{margin-top:0;}
 
 /* ---- 結果画面 ---- */
 .result-hero{text-align:center;padding:22px 0 6px;}
-.result-hero .score{font-family:'Noto Serif JP',serif;font-size:46px;color:var(--teal-deep);font-weight:700;}
-.result-hero .label{font-size:13px;color:#697066;}
+.result-hero .score{font-family:'Noto Serif JP',serif;font-size:48px;color:var(--teal);font-weight:700;}
+.result-hero .label{font-size:13px;color:var(--muted);}
 .result-bars{margin:18px 0;}
 .rbar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12.5px;}
-.rbar-row .name{width:130px;flex-shrink:0;text-align:right;color:#445048;}
-.rbar-track{flex:1;height:9px;background:#dfe3da;border-radius:5px;overflow:hidden;}
-.rbar-fill{height:100%;background:var(--teal);}
-.rbar-row .pct{width:38px;flex-shrink:0;font-weight:700;color:var(--teal-deep);}
+.rbar-row .name{width:130px;flex-shrink:0;text-align:right;color:#57534A;}
+.rbar-track{flex:1;height:9px;background:var(--soft);border-radius:999px;overflow:hidden;}
+.rbar-fill{height:100%;background:var(--teal);border-radius:999px;}
+.rbar-row .pct{min-width:38px;flex-shrink:0;font-weight:700;color:var(--ink);white-space:nowrap;text-align:right;}
 
 .wrong-list{margin-top:6px;}
 .wrong-item{
   background:#fff;border:1px solid var(--line);border-left:4px solid var(--danger);
-  border-radius:2px;padding:10px 12px;margin-bottom:7px;font-size:12.5px;line-height:1.6;
+  border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:12.5px;line-height:1.6;
 }
-.wrong-item .subj{color:#7d2a20;font-weight:700;font-size:11px;}
+.wrong-item .subj{color:#8E3A28;font-weight:700;font-size:11px;}
 
-footer.tip{font-size:11px;color:#8d958a;text-align:center;margin-top:24px;line-height:1.7;}
+footer.tip{font-size:11px;color:var(--muted2);text-align:center;margin-top:24px;line-height:1.7;}
 
 .search-result{
-  background:var(--card);border:1px solid var(--line);border-left:5px solid var(--teal);
-  border-radius:2px;padding:14px 16px;margin-bottom:12px;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:16px;margin-bottom:12px;
+  box-shadow:0 1px 3px rgba(63,57,41,.05);
 }
 .search-result .sr-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;}
-.search-result .sr-id{font-family:'Noto Serif JP',serif;font-weight:700;color:var(--teal-deep);font-size:14px;}
-.search-result .sr-meta{font-size:11px;color:#697066;}
+.search-result .sr-id{font-family:'Noto Serif JP',serif;font-weight:700;color:var(--teal);font-size:14px;}
+.search-result .sr-meta{font-size:11px;color:var(--muted);}
 .search-result .sr-q{font-size:14px;line-height:1.7;margin-bottom:10px;white-space:pre-wrap;}
-.search-result .sr-choice{padding:7px 10px;border:1px solid var(--line);border-radius:4px;margin-bottom:6px;font-size:13px;background:#fff;}
-.search-result .sr-choice.correct{border-color:var(--good);background:#E3F1E6;font-weight:700;color:#235732;}
-.search-result .sr-empty{color:#8d958a;font-size:13px;text-align:center;padding:20px 0;}
+.search-result .sr-choice{padding:8px 11px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:13px;background:#fff;}
+.search-result .sr-choice.correct{border-color:var(--good);background:#E7EDDC;font-weight:700;color:#445D33;}
+.search-result .sr-empty{color:var(--muted2);font-size:13px;text-align:center;padding:20px 0;}
 
 /* ---- 履歴・分析画面 ---- */
 .kw-weak-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12.5px;}
 .kw-weak-row .rank{width:20px;flex-shrink:0;text-align:center;font-weight:700;color:var(--danger);font-family:'Noto Serif JP',serif;}
-.kw-weak-row .name{flex:1;color:#445048;}
-.kw-weak-row .bar-track{flex:1.4;height:9px;background:#dfe3da;border-radius:5px;overflow:hidden;}
-.kw-weak-row .bar-fill{height:100%;background:var(--danger);}
+.kw-weak-row .name{flex:1;color:#57534A;}
+.kw-weak-row .bar-track{flex:1.4;height:9px;background:var(--soft);border-radius:999px;overflow:hidden;}
+.kw-weak-row .bar-fill{height:100%;background:var(--danger);border-radius:999px;}
 .kw-weak-row .cnt{width:50px;flex-shrink:0;text-align:right;font-weight:700;color:var(--danger);}
-.stats-empty{color:#8d958a;font-size:13px;text-align:center;padding:14px 0;}
+.stats-empty{color:var(--muted2);font-size:13px;text-align:center;padding:14px 0;}
 
 .heatmap-wrap{overflow-x:auto;}
 .heatmap-grid{display:grid;border-collapse:collapse;font-size:12px;min-width:280px;}
 .heatmap-grid .hm-corner{background:transparent;}
 .heatmap-grid .hm-head{
-  text-align:center;font-weight:700;color:var(--teal-deep);padding:6px 4px;
+  text-align:center;font-weight:700;color:var(--ink);padding:6px 4px;
   font-size:11.5px;border-bottom:2px solid var(--line);
 }
 .heatmap-grid .hm-rowlabel{
-  display:flex;align-items:center;padding:6px 8px 6px 0;font-size:12px;color:#445048;
+  display:flex;align-items:center;padding:6px 8px 6px 0;font-size:12px;color:#57534A;
   white-space:nowrap;border-right:2px solid var(--line);
 }
 .heatmap-grid .hm-cell{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:6px 2px;border:1px solid #fff;border-radius:2px;min-height:40px;color:#21302C;
+  padding:6px 2px;border:2px solid var(--card);border-radius:6px;min-height:40px;color:var(--ink);
 }
 .heatmap-grid .hm-cell .hm-pct{font-weight:700;font-size:13px;}
 .heatmap-grid .hm-cell .hm-cnt{font-size:9.5px;opacity:.75;}
-.heatmap-grid .hm-cell.hm-empty{background:#EDEFE9;color:#b9bfb3;}
-.heatmap-legend{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#697066;margin-top:8px;flex-wrap:wrap;}
+.heatmap-grid .hm-cell.hm-empty{background:#EDE9DD;color:#B4AF9F;}
+.heatmap-legend{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-top:8px;flex-wrap:wrap;}
 .heatmap-legend .sw{width:14px;height:10px;border-radius:2px;display:inline-block;}
 </style>
 </head>
 <body>
-<div id="loadingOverlay" style="position:fixed;inset:0;background:#fff;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;">
-  <div id="loadingMessage" style="font-size:14px;color:#666;">問題データを読み込んでいます…</div>
-  <div id="loadingErrorBox" style="display:none;font-size:13px;color:#c0392b;line-height:1.6;">
+<div id="loadingOverlay" style="position:fixed;inset:0;background:var(--paper);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;">
+  <div id="loadingMessage" style="font-size:14px;color:var(--muted);">問題データを読み込んでいます…</div>
+  <div id="loadingErrorBox" style="display:none;font-size:13px;color:var(--danger);line-height:1.6;">
     問題データの取得に失敗しました。通信環境をご確認のうえ、ページを再読み込みしてください。
   </div>
 </div>
@@ -276,9 +286,9 @@ footer.tip{font-size:11px;color:#8d958a;text-align:center;margin-top:24px;line-h
     <div>
       <div class="eyebrow">介護福祉士国家試験模擬対策</div>
       <h1>類題演習カルテ</h1>
-      <div style="font-size:11.5px;color:var(--teal-deep);margin-top:4px;">
+      <div style="font-size:11.5px;color:var(--muted);margin-top:5px;">
         記録名：<span id="studentIdBadge">未設定</span>
-        <button id="studentIdChangeBtn" style="background:none;border:none;color:var(--teal-deep);text-decoration:underline;cursor:pointer;font-size:11.5px;padding:0;margin-left:6px;">変更</button>
+        <button id="studentIdChangeBtn" style="background:none;border:none;color:var(--teal);text-decoration:underline;cursor:pointer;font-size:11.5px;padding:0;margin-left:6px;">変更</button>
       </div>
     </div>
     <div class="badge">1,047問</div>
@@ -286,11 +296,11 @@ footer.tip{font-size:11px;color:#8d958a;text-align:center;margin-top:24px;line-h
 
   <!-- ============ 記録名（studentId）入力モーダル ============ -->
   <div id="studentIdModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:#fff;border-radius:14px;padding:24px;max-width:340px;width:100%;">
+    <div style="background:var(--card);border-radius:18px;padding:26px;max-width:340px;width:100%;border:1px solid var(--line);">
       <h3 style="margin:0 0 10px;">記録名を入力してください</h3>
       <p style="font-size:12.5px;color:#666;margin:0 0 14px;line-height:1.6;">演習の履歴を記録するための名前または出席番号です。一度入力すると、この端末では次回から表示されません。</p>
-      <input id="studentIdInput" type="text" placeholder="例：13番 または 山田" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;">
-      <div id="studentIdError" style="display:none;color:#c0392b;font-size:12px;margin-top:6px;">名前または出席番号を入力してください。</div>
+      <input id="studentIdInput" type="text" placeholder="例：13番 または 山田" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;">
+      <div id="studentIdError" style="display:none;color:var(--danger);font-size:12px;margin-top:6px;">名前または出席番号を入力してください。</div>
       <button id="studentIdSaveBtn" class="btn btn-primary" style="margin-top:14px;width:100%;">保存して始める</button>
     </div>
   </div>
@@ -367,7 +377,7 @@ footer.tip{font-size:11px;color:#8d958a;text-align:center;margin-top:24px;line-h
 
   <!-- ============ 履歴・分析画面 ============ -->
   <section class="screen" id="screen-stats">
-    <button id="homeFromStatsBtn" style="background:none;border:none;color:var(--teal-deep);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+    <button id="homeFromStatsBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
 
     <div class="chart-card" style="border-left-color:var(--gold);">
       <div class="tab-label" style="background:var(--gold);">概況</div>
@@ -396,15 +406,15 @@ footer.tip{font-size:11px;color:#8d958a;text-align:center;margin-top:24px;line-h
     <button class="btn btn-secondary" id="backToSetupFromStatsBtn">設定画面に戻る</button>
     <button class="btn btn-ghost" id="resetHistoryBtn" style="color:var(--danger);border-color:var(--danger);">履歴をすべて削除する</button>
     <div id="resetConfirmRow" style="display:none;align-items:center;gap:8px;font-size:12px;margin-top:8px;justify-content:center;">
-      <span style="color:#7d2a20;">本当に削除しますか？元に戻せません。</span>
-      <button id="resetConfirmYes" style="background:var(--danger);color:#fff;border:none;border-radius:3px;padding:5px 12px;font-size:11.5px;cursor:pointer;">削除する</button>
-      <button id="resetConfirmNo" style="background:#fff;border:1px solid var(--line);border-radius:3px;padding:5px 12px;font-size:11.5px;cursor:pointer;">やめる</button>
+      <span style="color:#8E3A28;">本当に削除しますか？元に戻せません。</span>
+      <button id="resetConfirmYes" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">削除する</button>
+      <button id="resetConfirmNo" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">やめる</button>
     </div>
   </section>
 
   <!-- ============ 検索画面 ============ -->
   <section class="screen" id="screen-search">
-    <button id="homeFromSearchBtn" style="background:none;border:none;color:var(--teal-deep);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+    <button id="homeFromSearchBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
     <div class="chart-card">
       <div class="tab-label">検索</div>
       <h3>問題番号で検索</h3>
@@ -417,11 +427,11 @@ footer.tip{font-size:11px;color:#8d958a;text-align:center;margin-top:24px;line-h
   <!-- ============ 出題画面 ============ -->
   <section class="screen" id="screen-quiz">
     <div class="quiz-head">
-      <button id="homeFromQuizBtn" style="background:none;border:none;color:var(--teal-deep);font-size:12.5px;font-weight:700;padding:0;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+      <button id="homeFromQuizBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
       <div id="homeConfirmRow" style="display:none;align-items:center;gap:8px;font-size:12px;">
-        <span style="color:#7d2a20;">進行状況が失われます。</span>
-        <button id="homeConfirmYes" style="background:var(--danger);color:#fff;border:none;border-radius:3px;padding:4px 10px;font-size:11.5px;cursor:pointer;">戻る</button>
-        <button id="homeConfirmNo" style="background:#fff;border:1px solid var(--line);border-radius:3px;padding:4px 10px;font-size:11.5px;cursor:pointer;">やめる</button>
+        <span style="color:#8E3A28;">進行状況が失われます。</span>
+        <button id="homeConfirmYes" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11.5px;cursor:pointer;">戻る</button>
+        <button id="homeConfirmNo" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:11.5px;cursor:pointer;">やめる</button>
       </div>
       <div class="progress-text" id="liveScore">正解 0</div>
     </div>
@@ -444,7 +454,7 @@ footer.tip{font-size:11px;color:#8d958a;text-align:center;margin-top:24px;line-h
       </div>
 
       <div id="blankArea" style="display:none;">
-        <div id="blankPrompt" style="font-size:14px;line-height:1.7;background:#fff;border:1px dashed var(--line);border-radius:4px;padding:10px 12px;margin-bottom:10px;"></div>
+        <div id="blankPrompt" style="font-size:14px;line-height:1.7;background:#fff;border:1px dashed #D8D2C2;border-radius:10px;padding:10px 12px;margin-bottom:10px;"></div>
         <div class="reveal-area" id="blankRevealArea" style="display:none;">
           <div class="ans" id="blankRevealAns"></div>
         </div>
@@ -950,7 +960,7 @@ function showFeedback(q, gotCorrect, isReview, blankWord){
     const ans = blankWord !== undefined ? blankWord : q.choices[q.answer-1];
     html += `<div class="feedback ng">不正解です。正答は <b>${ans}</b> です。</div>`;
   } else if(isReview){
-    html += `<div class="feedback" style="background:#EFEFE6;color:#445048;">記述モード（自己採点のみ・記録なし）</div>`;
+    html += `<div class="feedback" style="background:#ECE8DC;color:#57534A;">記述モード（自己採点のみ・記録なし）</div>`;
   }
   if(q.keywords && q.keywords.length){
     html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
@@ -996,7 +1006,7 @@ document.getElementById('answerBtn').onclick = () => {
     document.getElementById('revealAns').textContent = '正答：' + q.choices[q.answer-1];
     gotCorrect = null; // 記述モードは自己採点
     const fb = document.getElementById('feedbackArea');
-    let html = `<div class="feedback ok" style="background:#EFEFE6;color:#445048;">正答と見比べて自己採点してください。下のボタンで合否を記録します。</div>
+    let html = `<div class="feedback ok" style="background:#ECE8DC;color:#57534A;">正答と見比べて自己採点してください。下のボタンで合否を記録します。</div>
       <div class="nav-row" style="margin-top:0;">
         <button class="btn btn-secondary" style="margin-top:8px;" onclick="markFree(true)">○ 合っていた</button>
         <button class="btn btn-secondary" style="margin-top:8px;border-color:var(--danger);color:var(--danger);" onclick="markFree(false)">× 間違えた</button>
