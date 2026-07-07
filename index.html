@@ -271,6 +271,14 @@ footer.tip{font-size:11px;color:var(--muted2);text-align:center;margin-top:24px;
 .heatmap-grid .hm-cell.hm-empty{background:#EDE9DD;color:#B4AF9F;}
 .heatmap-legend{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-top:8px;flex-wrap:wrap;}
 .heatmap-legend .sw{width:14px;height:10px;border-radius:2px;display:inline-block;}
+
+/* ---- 解説（解答後・折りたたみ） ---- */
+details.expl{margin-top:12px;border:1px solid var(--line);border-left:3px solid var(--good);border-radius:10px;background:#fff;overflow:hidden;}
+details.expl>summary{list-style:none;cursor:pointer;padding:10px 13px;font-size:13px;font-weight:700;color:#4C6640;user-select:none;}
+details.expl>summary::-webkit-details-marker{display:none;}
+details.expl>summary::before{content:"\25B8";margin-right:6px;font-size:11px;}
+details.expl[open]>summary::before{content:"\25BE";}
+details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;color:var(--ink);white-space:pre-wrap;}
 </style>
 </head>
 <body>
@@ -833,6 +841,7 @@ function renderSearchResults(query){
       <div class="sr-q">${item.question}</div>
       ${choicesHtml}
       ${kwHtml}
+      ${explanationHtml(item)}
     </div>`;
   }).join('') + (matches.length === 30 ? '<div class="hint" style="text-align:center;">他にも一致する問題があります。検索語をより具体的にしてください。</div>' : '');
 }
@@ -944,11 +953,19 @@ function renderQuestion(){
       if(q.keywords && q.keywords.length){
         html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
       }
+      html += explanationHtml(q);
       fb.innerHTML = html;
     } else {
       showFeedback(q, entry.correct, true);
     }
   }
+}
+
+function explanationHtml(q){
+  const ex = q && q.explanation ? String(q.explanation).trim() : '';
+  if(!ex) return '';
+  const esc = ex.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `<details class="expl"><summary>\u{1F4A1} 解説を見る</summary><div class="expl-body">${esc}</div></details>`;
 }
 
 function showFeedback(q, gotCorrect, isReview, blankWord){
@@ -965,6 +982,7 @@ function showFeedback(q, gotCorrect, isReview, blankWord){
   if(q.keywords && q.keywords.length){
     html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
   }
+  html += explanationHtml(q);
   fb.innerHTML = html;
 }
 
@@ -1014,6 +1032,7 @@ document.getElementById('answerBtn').onclick = () => {
     if(q.keywords && q.keywords.length){
       html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
     }
+    html += explanationHtml(q);
     fb.innerHTML = html;
     state.pendingFree = q;
   }
@@ -1036,6 +1055,7 @@ function markBlank(correct){
   if(q.keywords && q.keywords.length){
     html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
   }
+  html += explanationHtml(q);
   fb.innerHTML = html;
 }
 
@@ -1120,7 +1140,7 @@ async function showResult(){
     wrongCard.style.display = 'block';
     retryBtn.style.display = 'block';
     document.getElementById('wrongList').innerHTML = wrong.map(r => {
-      return `<div class="wrong-item"><span class="subj">${r.subject}</span><br>${r.q.question}<br><b style="color:var(--good);">正答：${r.q.choices[r.q.answer-1]}</b></div>`;
+      return `<div class="wrong-item"><span class="subj">${r.subject}</span><br>${r.q.question}<br><b style="color:var(--good);">正答：${r.q.choices[r.q.answer-1]}</b>${explanationHtml(r.q)}</div>`;
     }).join('');
     retryBtn.onclick = () => {
       state.quiz = wrong.map(r=>r.q);
@@ -1365,3 +1385,4 @@ initApp();
 </script>
 </body>
 </html>
+
