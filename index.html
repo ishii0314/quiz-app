@@ -279,6 +279,33 @@ details.expl>summary::-webkit-details-marker{display:none;}
 details.expl>summary::before{content:"\25B8";margin-right:6px;font-size:11px;}
 details.expl[open]>summary::before{content:"\25BE";}
 details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;color:var(--ink);white-space:pre-wrap;}
+
+/* ---- マイカード帳（解説→フラッシュカード導線） ---- */
+.card-add-btn{
+  display:inline-flex;align-items:center;gap:4px;margin-top:10px;
+  border:1px solid var(--gold);background:#fff;color:#6B5A24;
+  font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;transition:.15s;
+}
+.card-add-btn:hover{background:#F7F2E3;}
+.card-add-btn.added{background:#F0E7CC;}
+.card-remove-btn{
+  flex-shrink:0;border:1px solid var(--line);background:#fff;color:var(--muted);
+  font-size:11px;padding:4px 10px;border-radius:999px;cursor:pointer;
+  font-family:'Noto Sans JP',sans-serif;
+}
+.card-remove-btn:hover{border-color:var(--danger);color:var(--danger);}
+.btn-secondary:disabled,.btn-ghost:disabled{opacity:.45;cursor:not-allowed;}
+.fc-front-label{font-size:11.5px;color:var(--muted);margin-bottom:6px;}
+.fc-front-ask{margin-top:8px;font-size:12.5px;color:var(--muted);}
+.expl-summary{
+  margin-top:8px;padding:8px 10px;background:#F0E7CC;border-radius:8px;
+  font-size:13px;line-height:1.7;color:var(--ink);
+}
+#blankPrompt .kw,#cardsList .kw,#idSearchResults .kw{
+  display:inline-block;background:rgba(63,57,41,.07);color:#57534A;
+  border-radius:999px;padding:2px 10px;font-size:11.5px;margin:4px 4px 0 0;
+}
 </style>
 </head>
 <body>
@@ -315,13 +342,6 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
 
   <!-- ============ 設定画面 ============ -->
   <section class="screen active" id="screen-setup">
-
-    <div class="chart-card">
-      <div class="tab-label">回</div>
-      <h3>出題する回を選ぶ</h3>
-      <div class="chip-grid" id="roundChips"></div>
-      <div class="hint">類題・類題2も同じ回としてまとめて対象になります。何も選ばなければ全ての回が対象です。</div>
-    </div>
 
     <div class="chart-card">
       <div class="tab-label">科目</div>
@@ -361,10 +381,20 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
       <h3>フラッシュカード形式で出題する</h3>
       <div class="toggle-row">
         <div>
-          <div class="label">正答の一部を空欄にして、答えを見て自己評価する</div>
-          <div class="desc">単語帳のように使えます（上の解答スタイルとは独立した設定です）</div>
+          <div class="label">答えを思い出してから確認し、○×を自己評価する</div>
+          <div class="desc">解説がある問題は「テーマ→正答＋まとめ」、まだ解説が無い問題は穴埋め形式で出題します（上の解答スタイルとは独立した設定です）</div>
         </div>
         <label class="switch"><input type="checkbox" id="toggleFlashcard"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="chart-card" id="deckCard">
+      <div class="tab-label" style="background:var(--gold);">カード帳</div>
+      <h3>マイカード帳</h3>
+      <div class="hint" id="deckHint" style="margin-top:0;margin-bottom:12px;"></div>
+      <div class="nav-row" style="margin-top:0;">
+        <button class="btn btn-secondary" id="deckReviewHomeBtn" style="margin-top:0;">🃏 復習する（<span id="deckCountHome">0</span>枚）</button>
+        <button class="btn btn-ghost" id="deckManageBtn" style="margin-top:0;">中身を見る</button>
       </div>
     </div>
 
@@ -465,6 +495,7 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
         <div id="blankPrompt" style="font-size:14px;line-height:1.7;background:#fff;border:1px dashed #D8D2C2;border-radius:10px;padding:10px 12px;margin-bottom:10px;"></div>
         <div class="reveal-area" id="blankRevealArea" style="display:none;">
           <div class="ans" id="blankRevealAns"></div>
+          <div class="expl-summary" id="blankRevealSummary" style="display:none;"></div>
         </div>
         <div id="blankSelfRate" style="display:none;margin-top:12px;">
           <div class="nav-row" style="margin-top:0;">
@@ -499,10 +530,29 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
       <div class="tab-label">復習</div>
       <h3>間違えた問題</h3>
       <div class="wrong-list" id="wrongList"></div>
+      <button class="btn btn-ghost" id="bulkAddWrongBtn" style="display:none;">🃏 間違えた問題をまとめてカード帳に追加</button>
     </div>
 
     <button class="btn btn-primary" id="retryWrongBtn" style="display:none;">間違えた問題だけ再演習</button>
     <button class="btn btn-secondary" id="backToSetupBtn">条件を変えてもう一度</button>
+  </section>
+
+  <!-- ============ マイカード帳画面 ============ -->
+  <section class="screen" id="screen-cards">
+    <button id="homeFromCardsBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+    <div class="chart-card">
+      <div class="tab-label" style="background:var(--gold);">カード帳</div>
+      <h3>マイカード帳（<span id="cardsCount">0枚</span>）</h3>
+      <div class="hint">演習の解答後に「🃏 この問題をカード帳に追加」で貯めた問題です。フラッシュカード形式で繰り返し復習できます。覚えた問題は「× はずす」で整理しましょう。</div>
+      <div class="wrong-list" id="cardsList" style="margin-top:12px;"></div>
+    </div>
+    <button class="btn btn-primary" id="deckReviewBtn">🃏 カード帳で復習する</button>
+    <button class="btn btn-ghost" id="deckClearBtn" style="color:var(--danger);border-color:var(--danger);">カード帳を空にする</button>
+    <div id="deckClearConfirmRow" style="display:none;align-items:center;gap:8px;font-size:12px;margin-top:8px;justify-content:center;">
+      <span style="color:#8E3A28;">カード帳を空にしますか？元に戻せません。</span>
+      <button id="deckClearYes" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">空にする</button>
+      <button id="deckClearNo" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">やめる</button>
+    </div>
   </section>
 
   <footer class="tip">介護福祉士国試模擬・共通問題バンクより自動出題　|　演習履歴は記録名ごとに保存されます</footer>
@@ -555,7 +605,10 @@ async function loadQuestionBank(){
     const res = await fetch(url);
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'unknown error');
-    ALL_Q = data.questions;
+    // 生徒に出すのは「類題」だけ（出典に「類題」を含むもの）。過去問・模試の原題は除外（公開を見据えた方針）
+    ALL_Q = (data.questions || []).filter(q => String(q.source || '').includes('類題'));
+    const badgeEl = document.querySelector('header.top .badge');
+    if(badgeEl) badgeEl.textContent = ALL_Q.length + '問';
     return true;
   }catch(e){
     if(loadingEl) loadingEl.style.display = 'block';
@@ -600,6 +653,7 @@ function extractRoundNumber(source){
 }
 
 function renderRoundChips(){
+  if(!document.getElementById('roundChips')) return; // 回フィルターは廃止
   const rounds = new Set();
   ALL_Q.forEach(q => {
     if(q.subject === '総合問題') return;
@@ -716,6 +770,144 @@ function computeAnswerBlank(q){
   return result;
 }
 
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ============ 解説ベースのフラッシュカード（案Cハイブリッド） ============ */
+// 解説の最終行（＝「まとめ」一文）を取り出す。誤答行（✗）で終わる場合はまとめ無しとみなす
+function explanationSummary(q){
+  const ex = q && q.explanation ? String(q.explanation).trim() : '';
+  if(!ex) return null;
+  const lines = ex.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  if(lines.length === 0) return null;
+  const last = lines[lines.length - 1];
+  if(/^[✗×]/.test(last)) return null;               // 誤答解説で終わっている＝まとめ行なし
+  if(lines.length === 1 && /^正答は/.test(last)) return null; // 正答理由のみの解説
+  return last;
+}
+
+// フラッシュカード1問分の表示データ。解説あり＝案C（表:テーマ／裏:正答＋まとめ）、解説なし＝従来の穴埋め
+function blankCardData(q){
+  const ex = q && q.explanation ? String(q.explanation).trim() : '';
+  if(ex){
+    return { mode:'expl', ab:null, correctText: q.choices[q.answer-1], summary: explanationSummary(q) };
+  }
+  const ab = computeAnswerBlank(q);
+  return { mode:'fill', ab, correctText: ab ? ab.word : q.choices[q.answer-1], summary: null };
+}
+
+function applyBlankReveal(bd){
+  document.getElementById('blankRevealAns').textContent = '正答：' + bd.correctText;
+  const sEl = document.getElementById('blankRevealSummary');
+  if(bd.summary){
+    sEl.style.display = 'block';
+    sEl.textContent = '📌 まとめ：' + bd.summary;
+  } else {
+    sEl.style.display = 'none';
+    sEl.textContent = '';
+  }
+}
+
+/* ============ マイカード帳（解説→フラッシュカード導線・localStorage） ============ */
+const CARD_DECK_KEY = 'quizAppCardDeck_v1';
+
+function loadCardDeck(){
+  try{
+    const raw = localStorage.getItem(CARD_DECK_KEY);
+    const a = raw ? JSON.parse(raw) : [];
+    return Array.isArray(a) ? a : [];
+  }catch(e){ return []; }
+}
+function saveCardDeck(ids){
+  try{ localStorage.setItem(CARD_DECK_KEY, JSON.stringify(ids)); }catch(e){}
+}
+function isInCardDeck(id){ return loadCardDeck().includes(id); }
+function addToCardDeck(id){
+  const d = loadCardDeck();
+  if(!d.includes(id)){ d.push(id); saveCardDeck(d); }
+}
+function removeFromCardDeck(id){ saveCardDeck(loadCardDeck().filter(x => x !== id)); }
+function toggleCardDeck(id){
+  if(isInCardDeck(id)){ removeFromCardDeck(id); return false; }
+  addToCardDeck(id); return true;
+}
+function getDeckQuestions(){
+  const byId = new Map(ALL_Q.map(q => [q.id, q]));
+  return loadCardDeck().map(id => byId.get(id)).filter(Boolean);
+}
+
+const CARD_BTN_ADD = '🃏 この問題をカード帳に追加';
+const CARD_BTN_ADDED = '✓ カード帳に追加済み（タップで解除）';
+
+function cardBtnHtml(q){
+  const added = isInCardDeck(q.id);
+  return `<div><button type="button" class="card-add-btn${added ? ' added' : ''}" data-qid="${escHtml(q.id)}" onclick="toggleCardBtn(this)">${added ? CARD_BTN_ADDED : CARD_BTN_ADD}</button></div>`;
+}
+
+function toggleCardBtn(btn){
+  const nowAdded = toggleCardDeck(btn.dataset.qid);
+  btn.classList.toggle('added', nowAdded);
+  btn.textContent = nowAdded ? CARD_BTN_ADDED : CARD_BTN_ADD;
+  renderDeckHome();
+}
+
+function renderDeckHome(){
+  const cntEl = document.getElementById('deckCountHome');
+  if(!cntEl) return;
+  const n = getDeckQuestions().length;
+  cntEl.textContent = n;
+  const btn = document.getElementById('deckReviewHomeBtn');
+  if(btn) btn.disabled = (n === 0);
+  const hint = document.getElementById('deckHint');
+  if(hint) hint.textContent = (n === 0)
+    ? 'まだカードがありません。演習で解答したあとに出る「🃏 この問題をカード帳に追加」ボタンで、覚えたい問題を貯められます。'
+    : '解答後に追加した問題を、フラッシュカード形式（解説がある問題は「正答＋まとめ」）で復習できます。';
+}
+
+function renderCardsScreen(){
+  const listEl = document.getElementById('cardsList');
+  const qs = getDeckQuestions();
+  document.getElementById('cardsCount').textContent = qs.length + '枚';
+  document.getElementById('deckReviewBtn').disabled = (qs.length === 0);
+  document.getElementById('deckClearBtn').style.display = qs.length ? 'block' : 'none';
+  document.getElementById('deckClearConfirmRow').style.display = 'none';
+  if(qs.length === 0){
+    listEl.innerHTML = '<div class="stats-empty">カードがありません。演習の解答後に「🃏 この問題をカード帳に追加」で貯められます。</div>';
+    return;
+  }
+  listEl.innerHTML = qs.map(q => `
+    <div class="wrong-item" style="border-left-color:var(--gold);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;">
+        <span class="subj" style="color:#6B5A24;">${escHtml(q.subject)}　<span style="font-weight:400;color:var(--muted2);">${escHtml(q.id)}</span></span>
+        <button type="button" class="card-remove-btn" data-qid="${escHtml(q.id)}">× はずす</button>
+      </div>
+      ${escHtml(q.question)}
+      ${(q.keywords && q.keywords.length) ? '<div style="margin-top:6px;">' + q.keywords.map(k => `<span class="kw">${escHtml(k)}</span>`).join('') + '</div>' : ''}
+    </div>`).join('');
+  listEl.querySelectorAll('.card-remove-btn').forEach(b => {
+    b.onclick = () => {
+      removeFromCardDeck(b.dataset.qid);
+      renderCardsScreen();
+      renderDeckHome();
+    };
+  });
+}
+
+// カード帳の問題だけでフラッシュカード演習を始める（通常演習の設定には影響しない）
+function startDeckReview(){
+  const qs = getDeckQuestions();
+  if(qs.length === 0) return;
+  state.quiz = shuffleArr(qs);
+  state.idx = 0;
+  state.correct = 0;
+  state.results = [];
+  state.history = new Array(state.quiz.length).fill(null);
+  state.answerMode = 'blank'; // カード帳は常にフラッシュカード形式（通常演習はstartBtnで再計算される）
+  showScreen('quiz');
+  renderQuestion();
+}
+
 document.querySelectorAll('#modeChips .diff-chip').forEach(chip => {
   chip.onclick = () => {
     document.querySelectorAll('#modeChips .diff-chip').forEach(c => c.classList.remove('on'));
@@ -745,7 +937,7 @@ document.getElementById('toggleFlashcard').addEventListener('change', e => {
   const hint = document.getElementById('modeHint');
   const shuffleRow = document.getElementById('shuffleRow');
   if(state.flashcardOn){
-    hint.textContent = 'フラッシュカード形式が有効なため，上の解答スタイルは使用されません。正答の一部を空欄にして表示し，「答えを見る」で確認後，自分で○×を記録します。';
+    hint.textContent = 'フラッシュカード形式が有効なため，上の解答スタイルは使用されません。解説がある問題は「テーマ→正答＋まとめ」，まだ解説が無い問題は穴埋めで表示し，「答えを見る」で確認後，自分で○×を記録します。';
     shuffleRow.style.display = 'none';
   } else if(state.choiceStyle === 'choices'){
     hint.textContent = '問題文の選択肢から答えを選びます。';
@@ -842,6 +1034,7 @@ function renderSearchResults(query){
       ${choicesHtml}
       ${kwHtml}
       ${explanationHtml(item)}
+      ${cardBtnHtml(item)}
     </div>`;
   }).join('') + (matches.length === 30 ? '<div class="hint" style="text-align:center;">他にも一致する問題があります。検索語をより具体的にしてください。</div>' : '');
 }
@@ -849,6 +1042,7 @@ function renderSearchResults(query){
 document.getElementById('idSearchInput').addEventListener('input', e => renderSearchResults(e.target.value));
 
 document.getElementById('startBtn').onclick = () => {
+  recomputeAnswerMode(); // カード帳復習でanswerModeが'blank'に上書きされていても、設定どおりに戻す
   const pool = getFilteredPool();
   state.pool = pool;
   const n = Math.min(state.count, pool.length);
@@ -864,6 +1058,7 @@ document.getElementById('startBtn').onclick = () => {
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
+  if(name === 'setup') renderDeckHome(); // ホームに戻るたびにカード帳の枚数を更新
 }
 
 function renderQuestion(){
@@ -921,20 +1116,25 @@ function renderQuestion(){
       choiceArea.appendChild(div);
     });
   } else if(state.answerMode === 'blank'){
-    const ab = computeAnswerBlank(q);
+    const bd = blankCardData(q);
     document.getElementById('qText').textContent = q.question;
     blankArea.style.display = 'block';
     const promptEl = document.getElementById('blankPrompt');
-    if(ab){
-      promptEl.textContent = '正答の文：' + ab.before + '＿＿＿＿' + ab.after;
+    if(bd.mode === 'expl'){
+      // 案C：表＝テーマ（キーワード）＋問い。裏＝正答＋解説のまとめ
+      const kws = (q.keywords && q.keywords.length)
+        ? q.keywords.map(k => `<span class="kw">${escHtml(k)}</span>`).join('')
+        : '<span class="kw">（キーワードなし）</span>';
+      promptEl.innerHTML = `<div class="fc-front-label">テーマ（キーワード）</div>${kws}<div class="fc-front-ask">この問いの正答と要点（まとめ）を思い出してから「答えを見る」を押してください。</div>`;
+    } else if(bd.ab){
+      promptEl.textContent = '正答の文：' + bd.ab.before + '＿＿＿＿' + bd.ab.after;
     } else {
       promptEl.textContent = '（この問題は文中に空欄候補がないため，正答全文がそのまま答えになります）';
     }
-    const correctText = ab ? ab.word : q.choices[q.answer-1];
     document.getElementById('blankRevealArea').style.display = entry ? 'block' : 'none';
     document.getElementById('blankSelfRate').style.display = 'none';
     if(entry){
-      document.getElementById('blankRevealAns').textContent = '正答：' + correctText;
+      applyBlankReveal(bd);
     }
   } else {
     document.getElementById('qText').textContent = q.question;
@@ -954,6 +1154,7 @@ function renderQuestion(){
         html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
       }
       html += explanationHtml(q);
+      html += cardBtnHtml(q);
       fb.innerHTML = html;
     } else {
       showFeedback(q, entry.correct, true);
@@ -983,6 +1184,7 @@ function showFeedback(q, gotCorrect, isReview, blankWord){
     html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
   }
   html += explanationHtml(q);
+  html += cardBtnHtml(q);
   fb.innerHTML = html;
 }
 
@@ -992,13 +1194,12 @@ document.getElementById('answerBtn').onclick = () => {
   const q = state.quiz[state.idx];
 
   if(state.answerMode === 'blank'){
-    const ab = computeAnswerBlank(q);
-    const correctText = ab ? ab.word : q.choices[q.answer-1];
+    const bd = blankCardData(q);
     document.getElementById('answerBtn').style.display = 'none';
     document.getElementById('blankRevealArea').style.display = 'block';
-    document.getElementById('blankRevealAns').textContent = '正答：' + correctText;
+    applyBlankReveal(bd);
     document.getElementById('blankSelfRate').style.display = 'block';
-    state.pendingBlankCorrectText = correctText;
+    state.pendingBlankCorrectText = bd.correctText;
     return;
   }
 
@@ -1033,6 +1234,7 @@ document.getElementById('answerBtn').onclick = () => {
       html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
     }
     html += explanationHtml(q);
+    html += cardBtnHtml(q);
     fb.innerHTML = html;
     state.pendingFree = q;
   }
@@ -1056,6 +1258,7 @@ function markBlank(correct){
     html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
   }
   html += explanationHtml(q);
+  html += cardBtnHtml(q);
   fb.innerHTML = html;
 }
 
@@ -1139,9 +1342,23 @@ async function showResult(){
   if(wrong.length){
     wrongCard.style.display = 'block';
     retryBtn.style.display = 'block';
-    document.getElementById('wrongList').innerHTML = wrong.map(r => {
-      return `<div class="wrong-item"><span class="subj">${r.subject}</span><br>${r.q.question}<br><b style="color:var(--good);">正答：${r.q.choices[r.q.answer-1]}</b>${explanationHtml(r.q)}</div>`;
-    }).join('');
+    const renderWrongList = () => {
+      document.getElementById('wrongList').innerHTML = wrong.map(r => {
+        return `<div class="wrong-item"><span class="subj">${r.subject}</span><br>${r.q.question}<br><b style="color:var(--good);">正答：${r.q.choices[r.q.answer-1]}</b>${explanationHtml(r.q)}${cardBtnHtml(r.q)}</div>`;
+      }).join('');
+    };
+    renderWrongList();
+    const bulkBtn = document.getElementById('bulkAddWrongBtn');
+    bulkBtn.style.display = 'block';
+    bulkBtn.disabled = false;
+    bulkBtn.textContent = '🃏 間違えた問題をまとめてカード帳に追加';
+    bulkBtn.onclick = () => {
+      wrong.forEach(r => addToCardDeck(r.q.id));
+      renderWrongList();
+      renderDeckHome();
+      bulkBtn.disabled = true;
+      bulkBtn.textContent = `✓ 追加しました（カード帳：${loadCardDeck().length}枚）`;
+    };
     retryBtn.onclick = () => {
       state.quiz = wrong.map(r=>r.q);
       state.idx = 0; state.correct = 0; state.results = [];
@@ -1152,6 +1369,7 @@ async function showResult(){
   } else {
     wrongCard.style.display = 'none';
     retryBtn.style.display = 'none';
+    document.getElementById('bulkAddWrongBtn').style.display = 'none';
   }
 
   await saveSessionToHistory({
@@ -1166,6 +1384,30 @@ async function showResult(){
 
 document.getElementById('backToSetupBtn').onclick = () => {
   showScreen('setup');
+};
+
+/* ============ マイカード帳：画面操作 ============ */
+document.getElementById('deckManageBtn').onclick = () => {
+  showScreen('cards');
+  renderCardsScreen();
+};
+document.getElementById('deckReviewHomeBtn').onclick = startDeckReview;
+document.getElementById('deckReviewBtn').onclick = startDeckReview;
+document.getElementById('homeFromCardsBtn').onclick = () => {
+  showScreen('setup');
+};
+document.getElementById('deckClearBtn').onclick = () => {
+  document.getElementById('deckClearBtn').style.display = 'none';
+  document.getElementById('deckClearConfirmRow').style.display = 'flex';
+};
+document.getElementById('deckClearYes').onclick = () => {
+  saveCardDeck([]);
+  renderCardsScreen();
+  renderDeckHome();
+};
+document.getElementById('deckClearNo').onclick = () => {
+  document.getElementById('deckClearConfirmRow').style.display = 'none';
+  document.getElementById('deckClearBtn').style.display = 'block';
 };
 
 /* ============ 履歴・分析（フェーズ3：GAS連携） ============ */
@@ -1367,10 +1609,10 @@ document.getElementById('resetConfirmNo').onclick = () => {
 
 async function initApp(){
   const ok = await loadQuestionBank();
-  renderRoundChips();
   renderSubjectChips();
   buildKeywordFreq();
   updateMatchCount();
+  renderDeckHome();
   ensureStudentId();
   flushPendingQueue();
   const overlay = document.getElementById('loadingOverlay');
@@ -1385,4 +1627,3 @@ initApp();
 </script>
 </body>
 </html>
-
