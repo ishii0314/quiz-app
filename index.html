@@ -343,6 +343,14 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
   <!-- ============ 設定画面 ============ -->
   <section class="screen active" id="screen-setup">
 
+    <!-- カルテ処方箋モード（QR ?name=&kw= から開いたときだけ表示） -->
+    <div class="chart-card" id="rxBanner" style="display:none;border-left-color:var(--teal);background:#FBF3EF;">
+      <div class="tab-label" style="background:var(--teal);">カルテ処方箋</div>
+      <h3 style="margin-bottom:6px;">📋 <span id="rxBannerName"></span>さんの弱点で絞り込み中</h3>
+      <div class="hint" id="rxBannerDetail" style="margin-top:0;margin-bottom:12px;"></div>
+      <button class="btn btn-ghost" id="rxClearBtn" style="margin-top:0;">絞り込みを解除して全体から出題する</button>
+    </div>
+
     <div class="chart-card" id="goalCard" style="border-left-color:var(--gold);">
       <div class="tab-label" style="background:var(--gold);">今日の目標</div>
       <h3>🎯 今日の◯問　<span id="goalDoneBadge" style="display:none;font-size:12px;color:var(--good);font-family:'Noto Sans JP',sans-serif;font-weight:700;">✓ 達成！</span></h3>
@@ -586,9 +594,14 @@ function setStudentId(id){
   try{ localStorage.setItem(STUDENT_ID_KEY, id); }catch(e){}
 }
 
-function ensureStudentId(){
+function ensureStudentId(prefillName){
   const id = getStudentId();
   if(!id){
+    // カルテQRから来た場合は名前を入力欄にプリフィルしておく（保存は本人が1タップ確認）。
+    // 既に記録名がある端末は上書きしない（共有端末で他人の名前に化けるのを防ぐ）。
+    if(prefillName){
+      document.getElementById('studentIdInput').value = prefillName;
+    }
     document.getElementById('studentIdModal').style.display = 'flex';
   } else {
     document.getElementById('studentIdBadge').textContent = id;
@@ -1723,13 +1736,82 @@ document.getElementById('quickStartBtn').onclick = () => {
   renderQuestion();
 };
 
+/* ============ カルテ処方箋モード（QR ?name=&kw= の受け側） ============ */
+// 分析アプリの個人カルテに印刷したQRを読むと
+//   index.html?name=<記録名>&kw=<弱点キーワード（カンマ区切り・URLエンコード済み・最大6個）>
+// で開く。ここでその name / kw を解釈する。パラメータ無しの通常アクセスは一切影響を受けない。
+function showPrescriptionBanner(name, count){
+  const b = document.getElementById('rxBanner');
+  if(!b) return;
+  document.getElementById('rxBannerName').textContent = name || 'あなた';
+  document.getElementById('rxBannerDetail').textContent =
+    `カルテのQRコードから開きました。あなたの弱点${count}テーマで絞り込み済みです。このまま「演習を始める」を押すと、この範囲から出題されます（出題数は下のスライダーで変えられます）。`;
+  b.style.display = 'block';
+}
+
+// name/kw を読み、キーワードフィルタへ反映＋バナー表示。出題数の調整は呼び出し側で行う。
+// 戻り値：{ name, kws } もしくは（パラメータが実質無ければ）null
+function applyPrescriptionFilterFromUrl(){
+  let params;
+  try{ params = new URLSearchParams(window.location.search); }catch(e){ return null; }
+  const rawName = params.get('name');
+  const rawKw = params.get('kw');
+  const name = rawName ? rawName.trim() : '';
+
+  // 問題バンクに実在するキーワードだけを有効とみなす
+  const validKw = new Set();
+  ALL_Q.forEach(q => (q.keywords || []).forEach(k => validKw.add(k)));
+
+  let matched = [];
+  if(rawKw){
+    const wanted = rawKw.split(',').map(s => s.trim()).filter(Boolean);
+    const seen = new Set();
+    wanted.forEach(k => {
+      if(validKw.has(k) && !seen.has(k)){ seen.add(k); matched.push(k); }
+    });
+    matched.forEach(k => state.selectedKeywords.add(k));
+  }
+
+  if(matched.length > 0){
+    renderKwSelected();
+    showPrescriptionBanner(name, matched.length);
+  }
+  if(!name && matched.length === 0) return null; // 実質パラメータ無し＝通常起動
+  return { name, kws: matched };
+}
+
+// 処方箋モードの初期出題数（10問）を、絞り込み後の実在問題数に合わせてクランプして設定
+function setPrescriptionCount(){
+  const cr = document.getElementById('countRange');
+  const cn = document.getElementById('countNum');
+  if(!cr || !cn) return;
+  const max = Number(cr.max) || 50;
+  const v = Math.max(5, Math.min(10, max));
+  state.count = v;
+  cr.value = v;
+  cn.textContent = v + '問';
+}
+
+const rxClearBtnEl = document.getElementById('rxClearBtn');
+if(rxClearBtnEl){
+  rxClearBtnEl.onclick = () => {
+    state.selectedKeywords.clear();
+    renderKwSelected();
+    updateMatchCount();
+    const b = document.getElementById('rxBanner');
+    if(b) b.style.display = 'none';
+  };
+}
+
 async function initApp(){
   const ok = await loadQuestionBank();
   renderSubjectChips();
   buildKeywordFreq();
-  updateMatchCount();
+  const rx = applyPrescriptionFilterFromUrl(); // ?name=&kw= を反映（キーワード選択＋バナー）
+  updateMatchCount();                          // 絞り込みを反映してcountRange.maxを再計算
+  if(rx && rx.kws.length) setPrescriptionCount(); // maxに合わせて出題数10をクランプ設定
   renderDeckHome();
-  ensureStudentId();
+  ensureStudentId(rx ? rx.name : '');          // nameがあれば記録名入力欄にプリフィル
   renderGoalCard();
   flushPendingQueue();
   const overlay = document.getElementById('loadingOverlay');
