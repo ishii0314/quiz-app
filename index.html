@@ -348,6 +348,7 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
       <div class="tab-label" style="background:var(--teal);">カルテ処方箋</div>
       <h3 style="margin-bottom:6px;">📋 <span id="rxBannerName"></span>さんの弱点で絞り込み中</h3>
       <div class="hint" id="rxBannerDetail" style="margin-top:0;margin-bottom:12px;"></div>
+      <button class="btn btn-primary" id="rxStartBtn" style="margin-top:0;margin-bottom:8px;">▶ この弱点範囲で演習を始める</button>
       <button class="btn btn-ghost" id="rxClearBtn" style="margin-top:0;">絞り込みを解除して全体から出題する</button>
     </div>
 
@@ -1072,9 +1073,11 @@ function renderSearchResults(query){
 
 document.getElementById('idSearchInput').addEventListener('input', e => renderSearchResults(e.target.value));
 
-document.getElementById('startBtn').onclick = () => {
+// 現在の絞り込み（科目・キーワード・処方箋）でそのまま演習を開始する共通処理
+function startFilteredQuiz(){
   recomputeAnswerMode(); // カード帳復習でanswerModeが'blank'に上書きされていても、設定どおりに戻す
   const pool = getFilteredPool();
+  if(pool.length === 0) return;
   state.pool = pool;
   const n = Math.min(state.count, pool.length);
   state.quiz = shuffleArr(pool).slice(0, n);
@@ -1084,7 +1087,11 @@ document.getElementById('startBtn').onclick = () => {
   state.history = new Array(state.quiz.length).fill(null);
   showScreen('quiz');
   renderQuestion();
-};
+}
+document.getElementById('startBtn').onclick = startFilteredQuiz;
+// カルテ処方箋バナー内の「この弱点範囲で演習を始める」ボタン（下までスクロールせず即開始）
+const rxStartBtnEl = document.getElementById('rxStartBtn');
+if(rxStartBtnEl){ rxStartBtnEl.onclick = startFilteredQuiz; }
 
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
