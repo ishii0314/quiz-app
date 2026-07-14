@@ -1762,18 +1762,27 @@ function applyPrescriptionFilterFromUrl(){
   const rawKw = params.get('kw');
   const name = rawName ? rawName.trim() : '';
 
-  // 問題バンクに実在するキーワードだけを有効とみなす
-  const validKw = new Set();
-  ALL_Q.forEach(q => (q.keywords || []).forEach(k => validKw.add(k)));
+  // 問題バンクのキーワードは「A/B/C」のように複数語を1つのタグ文字列で保持している。
+  // QRが送るのは個別語（例：利用契約）なので、タグを「/」で分解した各語とも突き合わせる。
+  const validKw = new Set();          // 問題が実際に持つキーワード文字列（複合タグそのもの）
+  const tokenToTags = new Map();      // 個別語 → それを含む複合タグ文字列の集合
+  ALL_Q.forEach(q => (q.keywords || []).forEach(tag => {
+    validKw.add(tag);
+    String(tag).split('/').map(t => t.trim()).filter(Boolean).forEach(tok => {
+      if(!tokenToTags.has(tok)) tokenToTags.set(tok, new Set());
+      tokenToTags.get(tok).add(tag);
+    });
+  }));
 
-  let matched = [];
+  let matched = []; // バナー表示用（一致したテーマ＝QRが送った語のうち実在した数）
   if(rawKw){
     const wanted = rawKw.split(',').map(s => s.trim()).filter(Boolean);
-    const seen = new Set();
-    wanted.forEach(k => {
-      if(validKw.has(k) && !seen.has(k)){ seen.add(k); matched.push(k); }
+    wanted.forEach(w => {
+      let hit = false;
+      if(validKw.has(w)){ state.selectedKeywords.add(w); hit = true; }                 // タグ全体が1語のときの完全一致
+      if(tokenToTags.has(w)){ tokenToTags.get(w).forEach(tag => state.selectedKeywords.add(tag)); hit = true; } // 個別語一致→その語を含むタグを選択
+      if(hit && !matched.includes(w)) matched.push(w);
     });
-    matched.forEach(k => state.selectedKeywords.add(k));
   }
 
   if(matched.length > 0){
