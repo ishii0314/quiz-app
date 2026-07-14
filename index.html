@@ -1203,9 +1203,38 @@ function renderQuestion(){
   }
 }
 
-function explanationHtml(q){
-  const ex = q && q.explanation ? String(q.explanation).trim() : '';
+// 解説内の選択肢番号（「正答はN」「✗N …」）を、シャッフル後の画面の並び順に振り直す。
+// order[pos] = 元の選択肢番号(1始まり)。order無し・恒等（未シャッフル）ならそのまま返す。
+// 血圧や脈拍などの数値は行頭マーカーではないので影響しない（「正答は」直後と行頭「✗/×」直後の1桁だけ変換）。
+function remapExplanationNumbers(text, order){
+  if(!Array.isArray(order) || !order.length) return text;
+  if(order.every((v,i)=>v===i+1)) return text; // シャッフルされていない＝変換不要
+  const map = {};
+  order.forEach((orig,pos)=>{ map[orig] = pos+1; });
+  const rn = n => String(map[Number(n)] || n);
+  const remapped = text
+    .replace(/^(\s*正答は)([1-5])/, (m,p,n)=> p + rn(n))
+    .replace(/(^|\n)(\s*[✗×])\s*([1-5])/g, (m,br,mk,n)=> br + mk + rn(n));
+  // 振り直し後、誤答（✗）行を新番号の昇順に並べ替え、画面の上からの位置と一致させる
+  const lines = remapped.split('\n');
+  const isX = s => /^\s*[✗×]\s*[1-5]/.test(s);
+  const numOf = s => { const m = s.match(/^\s*[✗×]\s*([1-5])/); return m ? Number(m[1]) : 99; };
+  let i = 0;
+  while(i < lines.length){
+    if(isX(lines[i])){
+      let j = i; while(j < lines.length && isX(lines[j])) j++;
+      const block = lines.slice(i, j).sort((a,b)=> numOf(a) - numOf(b));
+      lines.splice(i, j - i, ...block);
+      i = j;
+    } else i++;
+  }
+  return lines.join('\n');
+}
+
+function explanationHtml(q, order){
+  let ex = q && q.explanation ? String(q.explanation).trim() : '';
   if(!ex) return '';
+  ex = remapExplanationNumbers(ex, order); // 選択肢シャッフル時は画面の並びに番号を合わせる
   const esc = ex.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return `<details class="expl"><summary>\u{1F4A1} 解説を見る</summary><div class="expl-body">${esc}</div></details>`;
 }
@@ -1224,7 +1253,8 @@ function showFeedback(q, gotCorrect, isReview, blankWord){
   if(q.keywords && q.keywords.length){
     html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
   }
-  html += explanationHtml(q);
+  // 選択肢モードはシャッフルされているので、解説番号を画面の並びに合わせる
+  html += explanationHtml(q, state.answerMode === 'choices' ? state.currentChoiceOrder : null);
   html += cardBtnHtml(q);
   fb.innerHTML = html;
 }
