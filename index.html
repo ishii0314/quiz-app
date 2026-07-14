@@ -651,6 +651,7 @@ let state = {
   selectedSubjects: new Set(),
   selectedRounds: new Set(),
   selectedKeywords: new Set(),
+  prescription: false, // カルテQR(?name=&kw=)で開いたときtrue。「今日の分」も絞り込みを尊重する
   keyword: '',
   choiceStyle: 'choices', // 'choices' | 'free' (used when flashcard is off)
   flashcardOn: false,
@@ -1723,7 +1724,10 @@ document.getElementById('goalRange').addEventListener('input', e => {
 
 // フィルター条件を無視して、全体からランダムに目標問数だけ即演習開始（ワンタップ用）
 document.getElementById('quickStartBtn').onclick = () => {
-  const pool = ALL_Q.filter(q => q.subject !== '総合問題');
+  // 通常は全体からランダム。ただしカルテQRの処方箋モードのときは弱点キーワードで絞り込んだ範囲から出題する
+  const pool = (state.prescription && state.selectedKeywords.size > 0)
+    ? getFilteredPool()
+    : ALL_Q.filter(q => q.subject !== '総合問題');
   if(pool.length === 0) return;
   recomputeAnswerMode();
   const n = Math.min(getDailyGoal(), pool.length);
@@ -1796,6 +1800,7 @@ const rxClearBtnEl = document.getElementById('rxClearBtn');
 if(rxClearBtnEl){
   rxClearBtnEl.onclick = () => {
     state.selectedKeywords.clear();
+    state.prescription = false; // 絞り込み解除後は「今日の分」も全体出題に戻す
     renderKwSelected();
     updateMatchCount();
     const b = document.getElementById('rxBanner');
@@ -1809,7 +1814,7 @@ async function initApp(){
   buildKeywordFreq();
   const rx = applyPrescriptionFilterFromUrl(); // ?name=&kw= を反映（キーワード選択＋バナー）
   updateMatchCount();                          // 絞り込みを反映してcountRange.maxを再計算
-  if(rx && rx.kws.length) setPrescriptionCount(); // maxに合わせて出題数10をクランプ設定
+  if(rx && rx.kws.length){ state.prescription = true; setPrescriptionCount(); } // maxに合わせて出題数10をクランプ設定
   renderDeckHome();
   ensureStudentId(rx ? rx.name : '');          // nameがあれば記録名入力欄にプリフィル
   renderGoalCard();
