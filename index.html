@@ -306,6 +306,43 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
   display:inline-block;background:rgba(63,57,41,.07);color:#57534A;
   border-radius:999px;padding:2px 10px;font-size:11.5px;margin:4px 4px 0 0;
 }
+
+/* ---- みんなのメモ（解説の学生クラウドソーシング） ---- */
+details.notes-sec{margin-top:10px;border:1px solid var(--line);border-left:3px solid var(--clay);border-radius:10px;background:#fff;overflow:hidden;}
+details.notes-sec>summary{list-style:none;cursor:pointer;padding:10px 13px;font-size:13px;font-weight:700;color:#8C4A2F;user-select:none;}
+details.notes-sec>summary::-webkit-details-marker{display:none;}
+details.notes-sec>summary::before{content:"\25B8";margin-right:6px;font-size:11px;}
+details.notes-sec[open]>summary::before{content:"\25BE";}
+.notes-body{padding:2px 12px 12px;}
+.note-card{border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px;background:var(--card);}
+.note-card.mine{background:#F4F1E8;border-style:dashed;}
+.note-badges{margin-bottom:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.note-lang-badge{background:var(--clay);color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 9px;}
+.note-type-badge{background:rgba(63,57,41,.08);color:#57534A;font-size:10.5px;border-radius:999px;padding:2px 9px;}
+.note-status{font-size:10.5px;border-radius:999px;padding:2px 9px;font-weight:700;}
+.note-status.pending{background:#F5E9C9;color:#7C5A16;}
+.note-status.rejected{background:#F6DFD4;color:#8E3A28;}
+.note-reason{font-size:10.5px;color:var(--muted);}
+.note-body{font-size:13px;line-height:1.7;color:var(--ink);white-space:pre-wrap;word-break:break-word;}
+.note-meta{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:11px;color:var(--muted);flex-wrap:wrap;}
+.note-report-btn,.note-report-yes,.note-report-no{border:none;background:none;color:var(--muted2);font-size:10.5px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0;}
+.note-report-yes{color:var(--danger);font-weight:700;}
+.note-report-done{font-size:10.5px;color:var(--muted2);}
+.note-empty{font-size:12px;color:var(--muted);padding:4px 0 8px;}
+.note-form{border-top:1px dashed var(--line);padding-top:10px;margin-top:4px;}
+.note-hint{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:7px;}
+.note-form-row{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.note-form select,.note-lang-free{font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);}
+.note-lang-free{display:none;width:100%;margin-bottom:6px;}
+.note-body-input{width:100%;min-height:64px;font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;color:var(--ink);}
+.note-body-input:focus{outline:2px solid rgba(198,97,63,.3);border-color:var(--teal);}
+.note-form-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.note-count{font-size:11px;color:var(--muted2);}
+.btn-note-submit{background:var(--teal);color:#fff;border:none;border-radius:999px;padding:7px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-note-submit:disabled{opacity:.5;cursor:not-allowed;}
+.note-form-msg{font-size:12px;color:var(--danger);margin-top:5px;line-height:1.6;}
+.note-thanks{background:#E7EDDC;color:#445D33;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:700;}
+.note-mine-label{font-size:11px;color:var(--muted);margin:6px 0 4px;font-weight:700;}
 </style>
 </head>
 <body>
@@ -1236,8 +1273,213 @@ function explanationHtml(q, order){
   if(!ex) return '';
   ex = remapExplanationNumbers(ex, order); // 選択肢シャッフル時は画面の並びに番号を合わせる
   const esc = ex.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  return `<details class="expl"><summary>\u{1F4A1} 解説を見る</summary><div class="expl-body">${esc}</div></details>`;
+  // 解説の折りたたみの下に「みんなのメモ」（学生投稿・先生承認制）を付ける
+  return `<details class="expl"><summary>\u{1F4A1} 解説を見る</summary><div class="expl-body">${esc}</div></details>` + notesSectionHtml(q);
 }
+
+/* ============ みんなのメモ（解説の学生クラウドソーシング） ============ */
+// 日本語解説がある問題にだけ表示（パイロット範囲。解説が増えると自動で対象が広がる）。
+// 投稿は先生の承認（検収）後に全員へ公開。承認前は本人にだけ「承認待ち」と見える。
+// 本文は必ずescHtmlでエスケープして表示する（XSS防止）。
+const NOTE_LANG_KEY = 'quizAppNoteLang_v1';   // よく使う言語（表示の優先・フォーム初期値）
+const NOTE_LANGS = ['ミャンマー語','インドネシア語','ネパール語','ベトナム語','中国語（台湾）','英語','日本語'];
+const NOTE_TYPES = ['母国語メモ','覚え方','補足'];
+const NOTE_MAX_LEN = 300;
+
+let NOTES_BY_QID = new Map();   // 問題ID → 承認済みメモ配列
+let MY_NOTES = [];              // 自分の投稿（承認待ち・却下の表示用）
+let NOTES_LOADED = false;
+const REPORTED_NOTES = new Set();
+
+function getPreferredNoteLang(){
+  try{ return localStorage.getItem(NOTE_LANG_KEY) || ''; }catch(e){ return ''; }
+}
+function setPreferredNoteLang(lang){
+  try{ localStorage.setItem(NOTE_LANG_KEY, lang); }catch(e){}
+}
+
+// 承認済みメモを起動時に全問分まとめて取得（1問ごとに通信しない）。失敗してもアプリ本体は止めない
+async function loadNotes(){
+  try{
+    const sid = getStudentId();
+    const url = `${GAS_API_URL}?type=notes${sid ? '&studentId=' + encodeURIComponent(sid) : ''}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'unknown error');
+    NOTES_BY_QID = new Map();
+    (data.notes || []).forEach(n => {
+      if(!NOTES_BY_QID.has(n.qid)) NOTES_BY_QID.set(n.qid, []);
+      NOTES_BY_QID.get(n.qid).push(n);
+    });
+    MY_NOTES = data.mine || [];
+    NOTES_LOADED = true;
+  }catch(e){
+    NOTES_LOADED = false; // メモが読めなくても演習はできる
+  }
+}
+
+// よく使う言語 → 日本語 → その他、の順（グループ内は新しい順）
+function sortNotesForDisplay(list){
+  const pref = getPreferredNoteLang();
+  const rank = n => (pref && n.lang === pref) ? 0 : (n.lang === '日本語' ? 1 : 2);
+  return list.slice().sort((a,b) => rank(a) - rank(b) || String(b.date).localeCompare(String(a.date)));
+}
+
+function noteReportBtnHtml(noteId){
+  if(REPORTED_NOTES.has(noteId)) return '<span class="note-report-done">通報済み</span>';
+  return `<button type="button" class="note-report-btn" data-noteid="${escHtml(noteId)}">⚑ 通報</button>`;
+}
+
+function noteCardHtml(n){
+  const dateStr = String(n.date || '').slice(0, 10);
+  return `<div class="note-card">
+    <div class="note-badges"><span class="note-lang-badge">${escHtml(n.lang)}</span><span class="note-type-badge">${escHtml(n.type)}</span></div>
+    <div class="note-body">${escHtml(n.body)}</div>
+    <div class="note-meta"><span>✍ ${escHtml(n.name)}さん</span><span>${escHtml(dateStr)}</span>${noteReportBtnHtml(n.id)}</div>
+  </div>`;
+}
+
+function myNoteCardHtml(m){
+  const st = m.status === 'pending'
+    ? '<span class="note-status pending">送信済み（承認待ち）</span>'
+    : `<span class="note-status rejected">却下</span>${m.reason ? '<span class="note-reason">' + escHtml(m.reason) + '</span>' : ''}`;
+  return `<div class="note-card mine">
+    <div class="note-badges"><span class="note-lang-badge">${escHtml(m.lang)}</span>${st}</div>
+    <div class="note-body">${escHtml(m.body)}</div>
+    <div class="note-meta"><span>あなたの投稿（本人にだけ表示されています）</span></div>
+  </div>`;
+}
+
+function noteFormHtml(q){
+  const pref = getPreferredNoteLang();
+  const langOpts = NOTE_LANGS.map(l => `<option value="${escHtml(l)}"${l === pref ? ' selected' : ''}>${escHtml(l)}</option>`).join('')
+    + `<option value="__other"${pref && NOTE_LANGS.indexOf(pref) === -1 ? ' selected' : ''}>その他…</option>`;
+  const typeOpts = NOTE_TYPES.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
+  const freeShown = pref && NOTE_LANGS.indexOf(pref) === -1;
+  return `<div class="note-form" data-qid="${escHtml(q.id)}">
+    <div class="note-hint">✏️ この問題のメモを投稿する（母国語OK）。覚え方・つまずきポイント・母国語での一言など。<br>※「2番が正解」のような<b>選択肢の番号には触れない</b>でね（表示のたびに並び順が変わるため）。先生の確認後にみんなへ公開されます。</div>
+    <div class="note-form-row">
+      <select class="note-lang-sel">${langOpts}</select>
+      <select class="note-type-sel">${typeOpts}</select>
+    </div>
+    <input type="text" class="note-lang-free" maxlength="20" placeholder="言語名を入力（例：タガログ語）"${freeShown ? ' style="display:block;"' : ''}${freeShown ? ` value="${escHtml(pref)}"` : ''}>
+    <textarea class="note-body-input" maxlength="${NOTE_MAX_LEN}" placeholder="メモを書く…"></textarea>
+    <div class="note-form-foot"><span class="note-count">0/${NOTE_MAX_LEN}</span><button type="button" class="btn-note-submit">送信する</button></div>
+    <div class="note-form-msg"></div>
+  </div>`;
+}
+
+function notesSectionHtml(q){
+  if(!q || !q.explanation || !String(q.explanation).trim()) return ''; // 日本語解説がある問題のみ（パイロット範囲）
+  const approved = sortNotesForDisplay(NOTES_BY_QID.get(q.id) || []);
+  const mine = MY_NOTES.filter(m => m.qid === q.id && m.status !== 'approved');
+  const listHtml = approved.length
+    ? approved.map(noteCardHtml).join('')
+    : `<div class="note-empty">${NOTES_LOADED ? 'まだメモがありません。最初の投稿者になろう！' : 'メモを読み込めませんでした（投稿はできます）'}</div>`;
+  const mineHtml = mine.length
+    ? `<div class="note-mine-label">あなたの投稿</div><div class="note-mine">${mine.map(myNoteCardHtml).join('')}</div>`
+    : '<div class="note-mine"></div>';
+  return `<details class="notes-sec"><summary>\u{1F30F} みんなのメモ（${approved.length}件）・投稿する</summary>
+    <div class="notes-body">${listHtml}${mineHtml}${noteFormHtml(q)}</div>
+  </details>`;
+}
+
+async function handleNoteSubmit(btn){
+  const form = btn.closest('.note-form');
+  if(!form) return;
+  const msg = form.querySelector('.note-form-msg');
+  const qid = form.dataset.qid;
+  const sid = getStudentId();
+  if(!sid){
+    msg.textContent = '投稿には記録名の設定が必要です。表示された画面で記録名を保存してから、もう一度送信してね。';
+    document.getElementById('studentIdError').style.display = 'none';
+    document.getElementById('studentIdModal').style.display = 'flex';
+    return;
+  }
+  let lang = form.querySelector('.note-lang-sel').value;
+  if(lang === '__other'){
+    lang = form.querySelector('.note-lang-free').value.trim();
+    if(!lang){ msg.textContent = '言語名を入力してください（例：タガログ語）。'; return; }
+  }
+  const type = form.querySelector('.note-type-sel').value;
+  const body = form.querySelector('.note-body-input').value.trim();
+  if(!body){ msg.textContent = 'メモの本文を書いてください。'; return; }
+  if(body.length > NOTE_MAX_LEN){ msg.textContent = `本文は${NOTE_MAX_LEN}字以内にしてください。`; return; }
+
+  btn.disabled = true;
+  btn.textContent = '送信中…';
+  msg.textContent = '';
+  try{
+    const res = await fetch(GAS_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'submitNote', studentId: sid, qid, lang, type, body })
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || '送信に失敗しました');
+    setPreferredNoteLang(lang);
+    const mineEntry = { id: data.noteId, qid, lang, body, status: 'pending', reason: '', date: '' };
+    MY_NOTES.unshift(mineEntry);
+    const sec = form.closest('.notes-sec');
+    const mineArea = sec ? sec.querySelector('.note-mine') : null;
+    if(mineArea) mineArea.insertAdjacentHTML('afterbegin', myNoteCardHtml(mineEntry));
+    form.innerHTML = '<div class="note-thanks">✅ ありがとう！先生の確認後にみんなへ公開されます。</div>';
+  }catch(e2){
+    msg.textContent = '⚠️ ' + (e2.message || '送信に失敗しました。通信環境を確認してもう一度試してね。');
+    btn.disabled = false;
+    btn.textContent = '送信する';
+  }
+}
+
+async function handleNoteReport(noteId, el){
+  try{
+    const res = await fetch(GAS_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'reportNote', noteId })
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || '');
+    REPORTED_NOTES.add(noteId);
+    el.outerHTML = '<span class="note-report-done">通報しました。先生が確認します</span>';
+  }catch(e){
+    el.outerHTML = '<span class="note-report-done">通報できませんでした</span>';
+  }
+}
+
+// メモ関連のイベント（動的に生成されるためdocumentに委譲）
+document.addEventListener('input', e => {
+  const t = e.target;
+  if(t.classList && t.classList.contains('note-body-input')){
+    const form = t.closest('.note-form');
+    const c = form && form.querySelector('.note-count');
+    if(c) c.textContent = `${t.value.length}/${NOTE_MAX_LEN}`;
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if(t.classList && t.classList.contains('note-lang-sel')){
+    const form = t.closest('.note-form');
+    const free = form && form.querySelector('.note-lang-free');
+    if(free) free.style.display = (t.value === '__other') ? 'block' : 'none';
+  }
+});
+document.addEventListener('click', e => {
+  const sub = e.target.closest('.btn-note-submit');
+  if(sub){ handleNoteSubmit(sub); return; }
+  const rep = e.target.closest('.note-report-btn');
+  if(rep){
+    const id = rep.dataset.noteid;
+    rep.outerHTML = `<span class="note-report-confirm"><span class="note-report-done">この投稿を通報する？</span> <button type="button" class="note-report-yes" data-noteid="${escHtml(id)}">はい</button>　<button type="button" class="note-report-no" data-noteid="${escHtml(id)}">いいえ</button></span>`;
+    return;
+  }
+  const yes = e.target.closest('.note-report-yes');
+  if(yes){ handleNoteReport(yes.dataset.noteid, yes.closest('.note-report-confirm')); return; }
+  const no = e.target.closest('.note-report-no');
+  if(no){
+    const id = no.dataset.noteid;
+    no.closest('.note-report-confirm').outerHTML = `<button type="button" class="note-report-btn" data-noteid="${escHtml(id)}">⚑ 通報</button>`;
+    return;
+  }
+});
 
 function showFeedback(q, gotCorrect, isReview, blankWord){
   const fb = document.getElementById('feedbackArea');
@@ -1855,7 +2097,8 @@ if(rxClearBtnEl){
 }
 
 async function initApp(){
-  const ok = await loadQuestionBank();
+  // 問題バンクと「みんなのメモ」を並行して読み込む（メモの失敗はアプリを止めない）
+  const [ok] = await Promise.all([loadQuestionBank(), loadNotes()]);
   renderSubjectChips();
   buildKeywordFreq();
   const rx = applyPrescriptionFilterFromUrl(); // ?name=&kw= を反映（キーワード選択＋バナー）

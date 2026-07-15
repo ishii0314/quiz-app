@@ -148,6 +148,40 @@ tr:hover td{background:#F3EFE3;}
   cursor:pointer;font-family:inherit;margin-top:16px;transition:.15s;
 }
 .reload-btn:hover{background:#B0532F;}
+
+/* ---- みんなのメモ 承認キュー ---- */
+.pending-badge{display:inline-block;background:var(--danger);color:#fff;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;margin-left:8px;vertical-align:2px;}
+.mod-card{border:1px solid var(--line);border-radius:14px;background:#fff;padding:16px;margin-bottom:14px;}
+.mod-card.reported{border-color:var(--danger);background:#FDF6F3;}
+.mod-q{font-size:13px;line-height:1.7;color:var(--ink);background:#F4F1E8;border-radius:10px;padding:10px 12px;margin-bottom:10px;}
+.mod-q .qid{font-family:'Noto Serif JP',serif;font-weight:700;color:var(--teal);font-size:12.5px;margin-right:8px;}
+.mod-q .ans{color:var(--good);font-weight:700;}
+.mod-expl{margin-top:8px;}
+.mod-expl summary{cursor:pointer;font-size:12px;font-weight:700;color:#4C6640;user-select:none;}
+.mod-expl .expl-body{font-size:12.5px;line-height:1.8;color:var(--ink);white-space:pre-wrap;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:6px;}
+.mod-note-head{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.mod-lang{background:var(--clay);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 10px;}
+.mod-type{background:var(--soft);color:#57534A;font-size:11px;border-radius:999px;padding:2px 10px;}
+.mod-who{font-size:12px;color:var(--muted);}
+.mod-report-flag{background:var(--danger);color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 10px;}
+.mod-body{font-size:14px;line-height:1.8;white-space:pre-wrap;word-break:break-word;border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+.mod-ja{font-size:13px;line-height:1.7;color:var(--ink);background:#EDF2E4;border-radius:10px;padding:9px 12px;margin-top:7px;white-space:pre-wrap;word-break:break-word;}
+.mod-ja .lbl{font-size:10.5px;font-weight:700;color:#4C6640;display:block;margin-bottom:2px;}
+.mod-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;}
+.mod-btn{border:none;border-radius:999px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.mod-btn:disabled{opacity:.5;cursor:not-allowed;}
+.mod-btn.approve{background:var(--good);color:#fff;}
+.mod-btn.edit{background:#fff;color:var(--ink);border:1.5px solid var(--teal-deep);}
+.mod-btn.reject{background:#fff;color:var(--danger);border:1.5px solid var(--danger);}
+.mod-btn.unpublish{background:#fff;color:var(--warn);border:1.5px solid var(--warn);font-size:11.5px;padding:5px 12px;}
+.mod-edit-area,.mod-reject-area{display:none;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;}
+.mod-edit-area textarea{width:100%;min-height:70px;font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;}
+.mod-reject-area select{font-family:inherit;font-size:12.5px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;max-width:100%;}
+.mod-msg{font-size:12px;color:var(--danger);margin-top:6px;}
+.key-box{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.key-box input{font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;flex:1;min-width:200px;}
+.approved-note-ja{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.mini-link{border:none;background:none;color:var(--muted2);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0;}
 </style>
 </head>
 <body>
@@ -161,6 +195,10 @@ tr:hover td{background:#F3EFE3;}
     <span class="badge">教員専用</span>
   </header>
 
+  <div id="notesAdminArea">
+    <div class="loading">みんなのメモを読み込み中…</div>
+  </div>
+
   <div id="mainContent">
     <div class="loading">データを読み込み中…</div>
   </div>
@@ -169,7 +207,8 @@ tr:hover td{background:#F3EFE3;}
 
 <script>
 // ===== ★ここを自分のGAS URLに書き換えてください =====
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyjkiwU1ci-8wi5BVflYOwPYvLfLpcY21mLZg37tOWEFfKA40U0EH__VaGnXWvh2m-A/exec';
+// 【2026-07-14】生徒用index.htmlと同じURLに統一（旧URLは別デプロイのため、みんなのメモ機能が動かない）
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwXCOsEuVsxbvGQPJSp61mYuX8xWFN95rfrXt5HhOr_BHxx-aPwWVRHNh27bClpJDk5iA/exec';
 // =====================================================
 
 const DIFF_LABEL = {1:'★ 基本', 2:'◎ 標準', 3:'× 応用'};
@@ -414,7 +453,250 @@ async function init(){
   }
 }
 
+/* ==================================================================
+   みんなのメモ（解説の学生クラウドソーシング）検収キュー
+   ・GASの ?type=notesAdmin&key=… で全投稿＋問題情報を取得（要・先生キー）
+   ・先生キーはGASコード内の TEACHER_KEY と同じ合言葉。初回入力でブラウザに記憶
+   ・承認するまで学生には公開されない
+   ================================================================== */
+const TEACHER_KEY_STORAGE = 'quizDashTeacherKey_v1';
+const REJECT_TEMPLATES = ['事実誤り（解説と矛盾）','出典不明・確認できない','不適切な表現','翻訳で内容を確認できませんでした','その他'];
+
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function getTeacherKey(){ try{ return localStorage.getItem(TEACHER_KEY_STORAGE) || ''; }catch(e){ return ''; } }
+function setTeacherKey(k){ try{ localStorage.setItem(TEACHER_KEY_STORAGE, k); }catch(e){} }
+function clearTeacherKey(){ try{ localStorage.removeItem(TEACHER_KEY_STORAGE); }catch(e){} }
+
+let NOTES_ADMIN = null; // {notes:[…], questions:{qid:{question,subject,answerText,explanation}}}
+
+function renderKeyPrompt(msg){
+  document.getElementById('notesAdminArea').innerHTML = `
+  <div class="section">
+    <h2><span class="section-label">メモ</span>🌏 みんなのメモ 検収</h2>
+    ${msg ? `<div class="error-box" style="margin-bottom:12px;">${escHtml(msg)}</div>` : ''}
+    <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">
+      学生が投稿したメモの承認には<b>先生キー</b>（GASのコード内 TEACHER_KEY に設定した合言葉）が必要です。<br>
+      初回に1度入力すると、このブラウザに記憶されます。
+    </p>
+    <div class="key-box">
+      <input type="password" id="teacherKeyInput" placeholder="先生キーを入力">
+      <button class="reload-btn" style="margin-top:0" onclick="saveTeacherKeyAndLoad()">保存して読み込む</button>
+    </div>
+  </div>`;
+}
+
+function saveTeacherKeyAndLoad(){
+  const el = document.getElementById('teacherKeyInput');
+  const v = el ? el.value.trim() : '';
+  if(!v) return;
+  setTeacherKey(v);
+  initNotesAdmin();
+}
+
+function resetTeacherKey(){
+  clearTeacherKey();
+  renderKeyPrompt('');
+}
+
+async function initNotesAdmin(){
+  const area = document.getElementById('notesAdminArea');
+  const key = getTeacherKey();
+  if(!key){ renderKeyPrompt(''); return; }
+  area.innerHTML = '<div class="loading">みんなのメモを読み込み中…</div>';
+  try{
+    const res = await fetch(`${GAS_API_URL}?type=notesAdmin&key=${encodeURIComponent(key)}`);
+    const data = await res.json();
+    if(!data.ok){
+      if(data.error === 'AUTH'){
+        clearTeacherKey();
+        renderKeyPrompt('先生キーが正しくありません。もう一度入力してください。');
+        return;
+      }
+      throw new Error(data.message || data.error || '取得失敗');
+    }
+    NOTES_ADMIN = data;
+    renderNotesAdmin();
+  }catch(e){
+    area.innerHTML = `<div class="section">
+      <h2><span class="section-label">メモ</span>🌏 みんなのメモ 検収</h2>
+      <div class="error-box">⚠️ みんなのメモの取得に失敗しました。<br>${escHtml(e.message)}<br><br>・GASを更新した後は「デプロイを管理」から新バージョンの発行が必要です（?type=pingで反映確認）</div>
+      <div style="text-align:center"><button class="reload-btn" onclick="initNotesAdmin()">再試行</button></div>
+    </div>`;
+  }
+}
+
+function questionBoxHtml(n){
+  const q = (NOTES_ADMIN.questions || {})[n.qid];
+  const explHtml = q && q.explanation
+    ? `<details class="mod-expl"><summary>💡 日本語解説を開く（矛盾がないか確認）</summary><div class="expl-body">${escHtml(q.explanation)}</div></details>`
+    : `<div style="margin-top:6px;font-size:11.5px;color:var(--warn);">※この問題にはまだ日本語解説がありません</div>`;
+  return `<div class="mod-q">
+    <span class="qid">${escHtml(n.qid)}</span><span style="font-size:11.5px;color:var(--muted);">${escHtml(q ? q.subject : '')}</span><br>
+    ${escHtml(q ? q.question : '（問題バンクに問題が見つかりません）')}<br>
+    <span class="ans">正答：${escHtml(q ? q.answerText : '—')}</span>
+    ${explHtml}
+  </div>`;
+}
+
+function noteHeadHtml(n){
+  return `<div class="mod-note-head">
+    <span class="mod-lang">${escHtml(n.lang)}</span>
+    <span class="mod-type">${escHtml(n.type)}</span>
+    <span class="mod-who">✍ ${escHtml(n.name)}　${escHtml(String(n.date))}</span>
+    ${n.reports > 0 ? `<span class="mod-report-flag">⚑ 通報${n.reports}件</span>` : ''}
+  </div>`;
+}
+
+function pendingCardHtml(n){
+  const rejectOpts = REJECT_TEMPLATES.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
+  return `<div class="mod-card${n.reports > 0 ? ' reported' : ''}" data-id="${escHtml(n.id)}">
+    ${questionBoxHtml(n)}
+    ${noteHeadHtml(n)}
+    ${n.reason ? `<div style="font-size:11.5px;color:var(--warn);margin-bottom:6px;">⚠ ${escHtml(n.reason)}</div>` : ''}
+    <div class="mod-body">${escHtml(n.body)}</div>
+    ${n.lang !== '日本語' ? `<div class="mod-ja"><span class="lbl">🌐 自動日本語訳（承認判断用・学生には表示されません）</span>${escHtml(n.ja || '（訳を取得できませんでした）')}</div>` : ''}
+    <div class="mod-actions">
+      <button class="mod-btn approve" data-act="approve">✔ 承認して公開</button>
+      <button class="mod-btn edit" data-act="toggleEdit">✎ 修正して承認</button>
+      <button class="mod-btn reject" data-act="toggleReject">✕ 却下</button>
+    </div>
+    <div class="mod-edit-area">
+      <p style="font-size:11.5px;color:var(--muted);margin-bottom:6px;">本文を修正してから公開します（外国語部分は無理に直さなくてOK）</p>
+      <textarea class="mod-edit-text" maxlength="300">${escHtml(n.body)}</textarea>
+      <div class="mod-actions"><button class="mod-btn approve" data-act="approveEdited">✔ この内容で承認して公開</button></div>
+    </div>
+    <div class="mod-reject-area">
+      <div class="mod-actions">
+        <select class="mod-reject-reason">${rejectOpts}</select>
+        <button class="mod-btn reject" data-act="rejectConfirm">✕ この理由で却下</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;">却下理由は投稿した本人にだけ表示されます。</p>
+    </div>
+    <div class="mod-msg"></div>
+  </div>`;
+}
+
+function approvedCardHtml(n){
+  return `<div class="mod-card" data-id="${escHtml(n.id)}" style="padding:12px 14px;">
+    ${noteHeadHtml(n)}
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:4px;">問題：${escHtml(n.qid)}　公開日：${escHtml(String(n.approvedAt || ''))}</div>
+    <div class="mod-body" style="font-size:13px;">${escHtml(n.body)}</div>
+    ${n.ja ? `<div class="approved-note-ja">🌐 ${escHtml(n.ja)}</div>` : ''}
+    <div class="mod-actions"><button class="mod-btn unpublish" data-act="unpublish">公開を取り消す（承認待ちに戻す）</button></div>
+    <div class="mod-msg"></div>
+  </div>`;
+}
+
+function renderNotesAdmin(){
+  const notes = (NOTES_ADMIN && NOTES_ADMIN.notes) || [];
+  const pending = notes.filter(n => n.status === 'pending')
+    .sort((a,b) => (b.reports - a.reports) || String(a.date).localeCompare(String(b.date))); // 通報あり優先→古い順
+  const approved = notes.filter(n => n.status === 'approved')
+    .sort((a,b) => String(b.approvedAt || b.date).localeCompare(String(a.approvedAt || a.date)));
+  const rejected = notes.filter(n => n.status === 'rejected').reverse().slice(0, 20);
+
+  document.getElementById('notesAdminArea').innerHTML = `
+  <div class="section">
+    <h2><span class="section-label">メモ</span>🌏 みんなのメモ 検収${pending.length ? `<span class="pending-badge">承認待ち ${pending.length}件</span>` : ''}</h2>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:14px;">
+      学生の投稿は<b>承認するまで誰にも公開されません</b>。原文の下の「自動日本語訳」を読み、日本語解説と矛盾しないか・不適切でないかを確認してください。訳だけで判断できないときは「翻訳で内容を確認できませんでした」で却下してOKです。
+    </p>
+    ${pending.length ? pending.map(pendingCardHtml).join('') : '<div class="empty">承認待ちの投稿はありません 🎉</div>'}
+    <details style="margin-top:16px;">
+      <summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--ink);">✅ 公開中のメモ（${approved.length}件）</summary>
+      <div style="margin-top:10px;">${approved.length ? approved.map(approvedCardHtml).join('') : '<div class="empty">公開中のメモはまだありません</div>'}</div>
+    </details>
+    <details style="margin-top:10px;">
+      <summary style="cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);">🗂 却下した投稿（直近${rejected.length}件）</summary>
+      <div style="margin-top:10px;">${rejected.length ? rejected.map(n => `
+        <div class="mod-card" style="padding:10px 14px;">
+          ${noteHeadHtml(n)}
+          <div class="mod-body" style="font-size:12.5px;">${escHtml(n.body)}</div>
+          <div style="font-size:11.5px;color:var(--danger);margin-top:4px;">却下理由：${escHtml(n.reason || '—')}</div>
+        </div>`).join('') : '<div class="empty">却下した投稿はありません</div>'}</div>
+    </details>
+    <div style="text-align:right;margin-top:14px;display:flex;gap:14px;justify-content:flex-end;">
+      <button class="mini-link" onclick="initNotesAdmin()">↻ 再読み込み</button>
+      <button class="mini-link" onclick="resetTeacherKey()">先生キーを入力し直す</button>
+    </div>
+  </div>`;
+}
+
+async function moderateNote(noteId, decision, newBody, reason, card){
+  const msgEl = card.querySelector('.mod-msg');
+  card.querySelectorAll('.mod-btn').forEach(b => b.disabled = true);
+  try{
+    const res = await fetch(GAS_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'moderateNote', key: getTeacherKey(), noteId, decision, newBody, reason })
+    });
+    const data = await res.json();
+    if(!data.ok){
+      if(data.error === 'AUTH'){ clearTeacherKey(); renderKeyPrompt('先生キーが正しくありません。もう一度入力してください。'); return; }
+      throw new Error(data.message || data.error || '更新に失敗しました');
+    }
+    // ローカルの状態を更新して再描画（毎回の再取得はしない。最新化は「再読み込み」で）
+    const n = (NOTES_ADMIN.notes || []).find(x => x.id === noteId);
+    if(n){
+      if(decision === 'approve'){
+        n.status = 'approved';
+        n.approvedAt = new Date().toLocaleString('ja-JP');
+        n.reports = 0;
+        n.reason = '';
+        if(newBody) n.body = newBody;
+      } else if(decision === 'reject'){
+        n.status = 'rejected';
+        n.reason = reason || '';
+      } else {
+        n.status = 'pending';
+        n.reason = reason || '';
+      }
+    }
+    renderNotesAdmin();
+  }catch(e){
+    if(msgEl) msgEl.textContent = '⚠️ ' + e.message;
+    card.querySelectorAll('.mod-btn').forEach(b => b.disabled = false);
+  }
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.mod-btn');
+  if(!btn) return;
+  const card = btn.closest('.mod-card');
+  if(!card) return;
+  const id = card.dataset.id;
+  const act = btn.dataset.act;
+  if(act === 'approve'){ moderateNote(id, 'approve', '', '', card); }
+  else if(act === 'toggleEdit'){
+    const area = card.querySelector('.mod-edit-area');
+    const rj = card.querySelector('.mod-reject-area');
+    if(rj) rj.style.display = 'none';
+    if(area) area.style.display = (area.style.display === 'block') ? 'none' : 'block';
+  }
+  else if(act === 'approveEdited'){
+    const nb = card.querySelector('.mod-edit-text').value.trim();
+    if(!nb) return;
+    moderateNote(id, 'approve', nb, '', card);
+  }
+  else if(act === 'toggleReject'){
+    const area = card.querySelector('.mod-reject-area');
+    const ed = card.querySelector('.mod-edit-area');
+    if(ed) ed.style.display = 'none';
+    if(area) area.style.display = (area.style.display === 'block') ? 'none' : 'block';
+  }
+  else if(act === 'rejectConfirm'){
+    const reason = card.querySelector('.mod-reject-reason').value;
+    moderateNote(id, 'reject', '', reason, card);
+  }
+  else if(act === 'unpublish'){
+    moderateNote(id, 'pending', '', '先生が公開を取り消しました（再確認待ち）', card);
+  }
+});
+
 init();
+initNotesAdmin();
 </script>
 </body>
 </html>
