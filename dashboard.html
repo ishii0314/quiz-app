@@ -214,10 +214,12 @@ const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwXCOsEuVsxbvGQPJSp
 const DIFF_LABEL = {1:'★ 基本', 2:'◎ 標準', 3:'× 応用'};
 const DIFF_KEYS = [1, 2, 3];
 
+// 【2026-08-03変更】全生徒の履歴取得にも先生キーが必要になった（GAS側で要求）。
+// キーはメモ検収と共通。初回に1度入力すればブラウザに記憶され、以後の操作は今までと同じ。
 async function loadAll(){
-  const res = await fetch(`${GAS_API_URL}?type=allHistory`);
+  const res = await fetch(`${GAS_API_URL}?type=allHistory&key=${encodeURIComponent(getTeacherKey())}`);
   const data = await res.json();
-  if(!data.ok) throw new Error(data.error || '取得失敗');
+  if(!data.ok) throw new Error(data.error === 'AUTH' ? 'AUTH' : (data.error || '取得失敗'));
   return data.history;
 }
 
@@ -438,7 +440,26 @@ function renderAll(history){
   `;
 }
 
+// 履歴エリア用の先生キー入力画面（キーが未設定／不正のときに出す）
+function renderMainKeyPrompt(msg){
+  document.getElementById('mainContent').innerHTML = `
+  <div class="section">
+    <h2><span class="section-label">認証</span>🔑 先生キーの入力</h2>
+    ${msg ? `<div class="error-box" style="margin-bottom:12px;">${escHtml(msg)}</div>` : ''}
+    <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">
+      生徒の学習履歴は個人情報のため、表示には<b>先生キー</b>（GASのコード内 TEACHER_KEY に設定した合言葉）が必要です。<br>
+      初回に1度入力すると、このブラウザに記憶されます。みんなのメモの検収キーと同じものです。
+    </p>
+    <div class="key-box">
+      <input type="password" id="mainKeyInput" placeholder="先生キーを入力">
+      <button class="reload-btn" style="margin-top:0" onclick="saveTeacherKeyAndLoad('mainKeyInput')">保存して読み込む</button>
+    </div>
+  </div>`;
+}
+
 async function init(){
+  // キー未設定なら、通信せずに入力を促す（無駄なリクエストを投げない）
+  if(!getTeacherKey()){ renderMainKeyPrompt(''); return; }
   document.getElementById('mainContent').innerHTML = '<div class="loading">データを読み込み中…</div>';
   try{
     if(!GAS_API_URL || GAS_API_URL.indexOf('script.google.com') === -1){
@@ -447,6 +468,11 @@ async function init(){
     const history = await loadAll();
     renderAll(history);
   }catch(e){
+    if(e.message === 'AUTH'){
+      clearTeacherKey();
+      renderMainKeyPrompt('先生キーが正しくありません。もう一度入力してください。');
+      return;
+    }
     document.getElementById('mainContent').innerHTML =
       `<div class="error-box">⚠️ データの取得に失敗しました。<br>${e.message}<br><br>・GAS_API_URLが正しいか確認してください<br>・GASが正しくデプロイされているか確認してください（?type=pingで確認可能）</div>
        <div style="text-align:center"><button class="reload-btn" onclick="init()" style="margin-top:16px">再試行</button></div>`;
@@ -471,6 +497,7 @@ function clearTeacherKey(){ try{ localStorage.removeItem(TEACHER_KEY_STORAGE); }
 
 let NOTES_ADMIN = null; // {notes:[…], questions:{qid:{question,subject,answerText,explanation}}}
 
+// 【2026-08-03】キー入力欄は履歴エリア側の renderMainKeyPrompt に一本化したため、この関数は現在未使用（参考として残置）
 function renderKeyPrompt(msg){
   document.getElementById('notesAdminArea').innerHTML = `
   <div class="section">
@@ -487,23 +514,38 @@ function renderKeyPrompt(msg){
   </div>`;
 }
 
-function saveTeacherKeyAndLoad(){
-  const el = document.getElementById('teacherKeyInput');
+// 【2026-08-03変更】どちらの入力欄から保存しても、履歴とメモ検収の両方を読み込み直す
+// （先生キーは共通なので、入力は1回で済む）
+function saveTeacherKeyAndLoad(inputId){
+  const el = document.getElementById(inputId || 'teacherKeyInput');
   const v = el ? el.value.trim() : '';
   if(!v) return;
   setTeacherKey(v);
+  init();
   initNotesAdmin();
 }
 
 function resetTeacherKey(){
   clearTeacherKey();
-  renderKeyPrompt('');
+  initNotesAdmin();       // 「下の欄に入力してください」の案内に戻す
+  renderMainKeyPrompt(''); // 入力欄は履歴エリアの1つに集約
 }
 
 async function initNotesAdmin(){
   const area = document.getElementById('notesAdminArea');
   const key = getTeacherKey();
-  if(!key){ renderKeyPrompt(''); return; }
+  // 【2026-08-03変更】キー未入力のときは下の「先生キーの入力」に一本化する
+  // （入力欄が2つ並ぶと、どちらに入れればよいか迷うため）
+  if(!key){
+    area.innerHTML = `
+    <div class="section">
+      <h2><span class="section-label">メモ</span>🌏 みんなのメモ 検収</h2>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;margin:0;">
+        下の「先生キーの入力」に合言葉を入れると、ここも一緒に読み込まれます。
+      </p>
+    </div>`;
+    return;
+  }
   area.innerHTML = '<div class="loading">みんなのメモを読み込み中…</div>';
   try{
     const res = await fetch(`${GAS_API_URL}?type=notesAdmin&key=${encodeURIComponent(key)}`);
@@ -511,7 +553,8 @@ async function initNotesAdmin(){
     if(!data.ok){
       if(data.error === 'AUTH'){
         clearTeacherKey();
-        renderKeyPrompt('先生キーが正しくありません。もう一度入力してください。');
+        initNotesAdmin();
+        renderMainKeyPrompt('先生キーが正しくありません。もう一度入力してください。');
         return;
       }
       throw new Error(data.message || data.error || '取得失敗');
@@ -634,7 +677,7 @@ async function moderateNote(noteId, decision, newBody, reason, card){
     });
     const data = await res.json();
     if(!data.ok){
-      if(data.error === 'AUTH'){ clearTeacherKey(); renderKeyPrompt('先生キーが正しくありません。もう一度入力してください。'); return; }
+      if(data.error === 'AUTH'){ clearTeacherKey(); initNotesAdmin(); renderMainKeyPrompt('先生キーが正しくありません。もう一度入力してください。'); return; }
       throw new Error(data.message || data.error || '更新に失敗しました');
     }
     // ローカルの状態を更新して再描画（毎回の再取得はしない。最新化は「再読み込み」で）
