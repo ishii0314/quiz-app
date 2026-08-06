@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>介護福祉士国試 類題演習</title>
+<title>介護福祉士 国試ドリル</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -316,6 +316,10 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
 .wb-badge{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:2px;}
 .wb-badge.known{background:#E4EDDD;color:#4C6640;}
 .wb-badge.unsure{background:#F6E3DC;color:#8E3A28;}
+.section-head{
+  font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;color:var(--muted);
+  letter-spacing:.04em;margin:26px 2px 10px;padding-bottom:6px;border-bottom:1px solid var(--line);
+}
 .wb-count{font-size:13px;color:var(--muted);margin-bottom:10px;}
 .wb-count b{font-family:'Noto Serif JP',serif;font-size:19px;color:var(--teal);font-weight:700;margin:0 2px;}
 .expl-summary{
@@ -382,7 +386,7 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
   <header class="top">
     <div>
       <div class="eyebrow">介護福祉士国家試験模擬対策</div>
-      <h1>類題演習カルテ</h1>
+      <h1>国試ドリル</h1>
       <div style="font-size:11.5px;color:var(--muted);margin-top:5px;">
         記録名：<span id="studentIdBadge">未設定</span>
         <button id="studentIdChangeBtn" style="background:none;border:none;color:var(--teal);text-decoration:underline;cursor:pointer;font-size:11.5px;padding:0;margin-left:6px;">変更</button>
@@ -416,7 +420,7 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 
     <div class="chart-card" id="goalCard" style="border-left-color:var(--gold);">
       <div class="tab-label" style="background:var(--gold);">今日の目標</div>
-      <h3>🎯 今日の◯問　<span id="goalDoneBadge" style="display:none;font-size:12px;color:var(--good);font-family:'Noto Sans JP',sans-serif;font-weight:700;">✓ 達成！</span></h3>
+      <h3>🎯 今日の<span id="goalTitleNum">10</span>問　<span id="goalDoneBadge" style="display:none;font-size:12px;color:var(--good);font-family:'Noto Sans JP',sans-serif;font-weight:700;">✓ 達成！</span></h3>
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin:10px 0 6px;">
         <div style="font-size:13px;color:var(--muted);">今日 <span id="goalToday" style="font-family:'Noto Serif JP',serif;font-size:22px;color:var(--teal);font-weight:700;">0</span> / <span id="goalTargetLabel">5問</span></div>
         <div style="font-size:13px;color:var(--muted);">🔥 連続 <span id="goalStreak" style="font-weight:700;color:var(--danger);">0</span>日</div>
@@ -427,21 +431,10 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
         <input type="range" id="goalRange" min="5" max="30" step="5" value="5">
         <div class="count-num" id="goalRangeNum">5問</div>
       </div>
-      <div class="hint">目標問数はスライダーでいつでも変更できます。「今日の分に挑戦する」は科目・キーワードの絞り込みを無視し、全体からランダムに出題します（下の設定で条件を選んで演習することもできます）。</div>
+      <div class="hint" id="quickScopeNote"></div>
     </div>
 
-    <div class="chart-card" id="wbCard" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">単語帳</div>
-      <h3>📖 用語を覚える</h3>
-      <div class="hint" style="margin-top:0;margin-bottom:12px;">解説のいちばん最後の一文（<b>用語＝意味</b>）から自動でつくった単語カードです。表の用語を見て意味を思い出し、めくって自分で「覚えた／あとで」をつけます。<b>問題を解く演習とは別の機能</b>です。</div>
-      <div class="wb-count">収録 <b id="wbTotal">0</b> 語　覚えた <b id="wbKnownCount">0</b> 語　マイ単語帳 <b id="wbMyCount">0</b> 語</div>
-      <div class="progress-bar" style="margin-bottom:14px;"><div class="progress-fill" id="wbHomeFill" style="width:0%;"></div></div>
-      <button class="btn btn-primary" id="wbStartHomeBtn">📖 単語帳を開く</button>
-      <div class="nav-row" style="margin-top:10px;">
-        <button class="btn btn-secondary" id="wbQuickUnknownBtn" style="margin-top:0;">まだの語だけ</button>
-        <button class="btn btn-ghost" id="wbMyListBtn" style="margin-top:0;">🔖 マイ単語帳</button>
-      </div>
-    </div>
+    <div class="section-head">演習（問題を解く）</div>
 
     <div class="chart-card" id="partCard">
       <div class="tab-label" style="background:var(--gold);">パート</div>
@@ -499,6 +492,24 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 
     <div class="matchcount">条件に一致する問題：<span class="n" id="matchN">0</span> 問</div>
     <button class="btn btn-primary" id="startBtn">演習を始める</button>
+
+    <div class="section-head">単語帳（用語を覚える）</div>
+
+    <div class="chart-card" id="wbCard" style="border-left-color:var(--gold);">
+      <div class="tab-label" style="background:var(--gold);">単語帳</div>
+      <h3>📖 単語帳（<span id="wbTotalHead">0</span>語）</h3>
+      <div class="hint" style="margin-top:0;margin-bottom:12px;">解説のいちばん最後の一文（<b>用語＝意味</b>）から自動でつくった単語カードです。表の用語を見て意味を思い出し、めくって自分で「覚えた／あとで」をつけます。<b>問題を解く演習とは別の機能</b>です。</div>
+      <div class="wb-count">覚えた <b id="wbKnownCount">0</b> 語　マイ単語帳 <b id="wbMyCount">0</b> 語<span id="wbTotal" style="display:none;">0</span></div>
+      <div class="progress-bar" style="margin-bottom:14px;"><div class="progress-fill" id="wbHomeFill" style="width:0%;"></div></div>
+      <button class="btn btn-primary" id="wbStartHomeBtn">📖 単語帳を開く</button>
+      <div class="nav-row" style="margin-top:10px;">
+        <button class="btn btn-secondary" id="wbQuickUnknownBtn" style="margin-top:0;">まだの語だけ</button>
+        <button class="btn btn-ghost" id="wbMyListBtn" style="margin-top:0;">🔖 マイ単語帳</button>
+      </div>
+    </div>
+
+    <div class="section-head">そのほか</div>
+
     <button class="btn btn-ghost" id="goSearchBtn">🔍 問題番号で検索する</button>
     <button class="btn btn-ghost" id="goStatsBtn">📊 学習履歴・弱点分析を見る</button>
   </section>
@@ -1185,6 +1196,8 @@ function renderWordbookHome(){
   const known = wbKnownCount();
   const mine  = getMyTermCards().length;
   totalEl.textContent = total;
+  const headEl = document.getElementById('wbTotalHead');
+  if(headEl) headEl.textContent = total;
   document.getElementById('wbKnownCount').textContent = known;
   document.getElementById('wbMyCount').textContent = mine;
   document.getElementById('wbHomeFill').style.width = total ? Math.round(known / total * 100) + '%' : '0%';
@@ -1459,6 +1472,7 @@ function getFilteredPool(){
 function updateMatchCount(){
   const pool = getFilteredPool();
   document.getElementById('matchN').textContent = pool.length;
+  if(typeof renderQuickScopeNote === 'function') renderQuickScopeNote();
   const startBtn = document.getElementById('startBtn');
   startBtn.disabled = pool.length === 0;
   document.getElementById('countRange').max = Math.max(5, Math.min(50, pool.length));
@@ -2395,6 +2409,7 @@ function computeDailyStats(history){
 
 async function renderGoalCard(){
   const goal = getDailyGoal();
+  document.getElementById('goalTitleNum').textContent = goal;   // 見出しの「今日の◯問」も目標数に追従させる
   document.getElementById('goalTargetLabel').textContent = goal + '問';
   document.getElementById('goalRangeNum').textContent = goal + '問';
   const rangeEl = document.getElementById('goalRange');
@@ -2432,10 +2447,33 @@ document.getElementById('goalRange').addEventListener('input', e => {
   renderGoalCard();
 });
 
-// フィルター条件を無視して、全体からランダムに目標問数だけ即演習開始（ワンタップ用）
+// 目標問数だけ即演習開始（ワンタップ用）。
+// 科目・キーワードなどの絞り込みが選ばれているときは、その範囲を尊重する（2026-08-06変更）。
+// 以前は常に全体から出題していたため、キーワードを選んでからこのボタンを押すと
+// 「絞り込みが効いていない」ように見えていた。
+function quickStartHasFilter(){
+  return state.selectedSubjects.size > 0
+      || state.selectedKeywords.size > 0
+      || state.selectedRounds.size > 0;
+}
+
+// ボタンの下に「いま何から出題されるか」を書く
+function renderQuickScopeNote(){
+  const el = document.getElementById('quickScopeNote');
+  if(!el) return;
+  const parts = [];
+  if(state.selectedSubjects.size > 0) parts.push('科目' + state.selectedSubjects.size + 'つ');
+  if(state.selectedKeywords.size > 0) parts.push('キーワード「' + Array.from(state.selectedKeywords).join('」「') + '」');
+  if(parts.length){
+    el.innerHTML = '目標問数はスライダーで変更できます。<b>いまは下の絞り込み（' + escHtml(parts.join('／')) +
+      '）の範囲から出題されます。</b>全体から出したいときは、下の絞り込みを解除してください。';
+  } else {
+    el.textContent = '目標問数はスライダーでいつでも変更できます。いまは絞り込みがないので全体からランダムに出題します（下の設定で科目やキーワードを選ぶと、この「今日の分」もその範囲から出ます）。';
+  }
+}
+
 document.getElementById('quickStartBtn').onclick = () => {
-  // 通常は全体からランダム。ただしカルテQRの処方箋モードのときは弱点キーワードで絞り込んだ範囲から出題する
-  const pool = (state.prescription && state.selectedKeywords.size > 0)
+  const pool = quickStartHasFilter()
     ? getFilteredPool()
     : ALL_Q.filter(q => q.subject !== '総合問題');
   if(pool.length === 0) return;
@@ -2540,6 +2578,7 @@ async function initApp(){
   migrateOldCardDeck();        // 旧マイカード帳（問題単位）をマイ単語帳（用語単位）へ引き継ぐ
   renderWbSubjectChips();
   renderWordbookHome();
+  renderQuickScopeNote();
   ensureStudentId(rx ? rx.name : '');          // nameがあれば記録名入力欄にプリフィル
   renderGoalCard();
   flushPendingQueue();
