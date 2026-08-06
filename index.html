@@ -320,6 +320,9 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
   font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;color:var(--muted);
   letter-spacing:.04em;margin:26px 2px 10px;padding-bottom:6px;border-bottom:1px solid var(--line);
 }
+.wb-kind{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 10px;}
+.wb-kind.term{background:#E9E4D6;color:#6B5A24;}
+.wb-kind.point{background:#F1E3DC;color:#8C4A2F;}
 .wb-count{font-size:13px;color:var(--muted);margin-bottom:10px;}
 .wb-count b{font-family:'Noto Serif JP',serif;font-size:19px;color:var(--teal);font-weight:700;margin:0 2px;}
 .expl-summary{
@@ -504,6 +507,7 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <h3>📖 単語帳（<span id="wbTotalHead">0</span>語）</h3>
       <div class="hint" style="margin-top:0;margin-bottom:12px;">解説のいちばん最後の一文（<b>用語＝意味</b>）から自動でつくった単語カードです。表の用語を見て意味を思い出し、めくって自分で「覚えた／あとで」をつけます。<b>問題を解く演習とは別の機能</b>です。</div>
       <div class="wb-count">覚えた <b id="wbKnownCount">0</b> 語　マイ単語帳 <b id="wbMyCount">0</b> 語<span id="wbTotal" style="display:none;">0</span></div>
+      <div style="font-size:11.5px;color:var(--muted2);margin:-4px 0 10px;">内訳：用語 <b id="wbTermCount">0</b> ／ ポイント（場面と対応の要点） <b id="wbPointCount">0</b></div>
       <div class="progress-bar" style="margin-bottom:14px;"><div class="progress-fill" id="wbHomeFill" style="width:0%;"></div></div>
       <button class="btn btn-primary" id="wbStartHomeBtn">📖 単語帳を開く</button>
       <div class="nav-row" style="margin-top:10px;">
@@ -642,6 +646,14 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
         <div class="diff-chip" data-scope="my">マイ単語帳</div>
       </div>
       <div class="hint" id="wbScopeHint">収録されているすべての用語から出します。</div>
+
+      <div style="margin-top:16px;font-size:12.5px;color:var(--muted);font-weight:700;">カードの種類</div>
+      <div class="diff-row" id="wbKindChips" style="margin-top:6px;">
+        <div class="diff-chip on" data-kind="all">すべて</div>
+        <div class="diff-chip" data-kind="term">用語だけ</div>
+        <div class="diff-chip" data-kind="point">ポイントだけ</div>
+      </div>
+      <div class="hint" id="wbKindHint"></div>
     </div>
 
     <div class="chart-card">
@@ -1064,7 +1076,28 @@ function termFromQuestion(q){
   return { term: term, def: def };
 }
 
-let TERM_CARDS = [];        // [{term, defs[], subjects[], subject, keywords[], qids[]}]
+/* 解説の最終行は2種類ある。
+     ① 用語の定義        「フレイル＝加齢に伴い心身が脆弱化した状態で…」
+     ② 場面と対応の要点  「高次脳機能障害の記憶障害への支援＝メモなど外部補助手段を活用する」
+   どちらも覚える価値はあるが、②は「単語」ではないので、カードに種別を付けて
+   「用語だけ」「ポイントだけ」で絞れるようにする。
+   ※機械判定なので境界はきっちりしない。捨てずに絞り込むだけなので、多少の取りこぼしは許容する。 */
+const WB_POINT_QUOTE = /^[「『]/;
+const WB_POINT_SITUATION = /(とき|場合|への対応|への支援|への配慮|への関わり|への声かけ|への対処|に対する|を訴え|の対応$|の支援$|の関わり$|の工夫$|の伝え方$|の声かけ$|の進め方$|のポイント$|必要なこと|含まれるもの|のある人との|のある人への|がある人との|がある人への|利用者との|利用者への|の人との|の人への)/;
+const WB_POINT_VERB = /(する$|すること$|した|して|される|できる|できない|しない|られる|守る$|捉える$|活かす$|高める)/;
+const WB_POINT_SENTENCE = /[ぁ-ん](が|を|は)[ぁ-んァ-ヶ一-龠]/;
+
+function wbTermKind(t){
+  if(WB_POINT_QUOTE.test(t)) return 'point';
+  if(t.length >= 18) return 'point';
+  if(WB_POINT_SITUATION.test(t)) return 'point';
+  if(WB_POINT_VERB.test(t)) return 'point';
+  if(t.length >= 13 && WB_POINT_SENTENCE.test(t)) return 'point';
+  return 'term';
+}
+const WB_KIND_LABEL = { term: '用語', point: 'ポイント' };
+
+let TERM_CARDS = [];        // [{term, kind, defs[], subjects[], subject, keywords[], qids[]}]
 let TERM_BY_NAME = new Map();
 
 function buildTermCards(){
@@ -1086,6 +1119,7 @@ function buildTermCards(){
   TERM_CARDS.forEach(c => {
     c.defs.sort((a,b) => b.length - a.length);   // いちばん情報量の多い言い方を主にする
     c.subject = c.subjects[0];
+    c.kind = wbTermKind(c.term);
   });
   TERM_CARDS.sort((a,b) => a.term.localeCompare(b.term, 'ja'));
   TERM_BY_NAME = new Map(TERM_CARDS.map(c => [c.term, c]));
@@ -1100,7 +1134,8 @@ function termCardOf(q){
 }
 
 function wbSubjectCount(subj){
-  return TERM_CARDS.filter(c => c.subjects.indexOf(subj) >= 0).length;
+  return TERM_CARDS.filter(c => c.subjects.indexOf(subj) >= 0
+    && (wb.kind === 'all' || c.kind === wb.kind)).length;
 }
 
 /* ---- 覚えた／あとで の記録（この端末の中だけ・演習の履歴とは別） ---- */
@@ -1202,6 +1237,10 @@ function renderWordbookHome(){
   totalEl.textContent = total;
   const headEl = document.getElementById('wbTotalHead');
   if(headEl) headEl.textContent = total;
+  const tEl = document.getElementById('wbTermCount');
+  const pEl = document.getElementById('wbPointCount');
+  if(tEl) tEl.textContent = wbKindCount('term');
+  if(pEl) pEl.textContent = wbKindCount('point');
   document.getElementById('wbKnownCount').textContent = known;
   document.getElementById('wbMyCount').textContent = mine;
   document.getElementById('wbHomeFill').style.width = total ? Math.round(known / total * 100) + '%' : '0%';
@@ -1214,6 +1253,7 @@ function renderWordbookHome(){
 let wb = {
   subjects: new Set(),
   scope: 'all',          // 'all' | 'unknown' | 'my'
+  kind: 'all',           // 'all' | 'term' | 'point'
   count: 20,             // 999 = 全部
   cards: [],
   idx: 0,
@@ -1230,10 +1270,17 @@ function wbFilteredCards(){
     const p = loadWbProgress();
     list = list.filter(c => p[c.term] !== 'known');
   }
+  if(wb.kind !== 'all'){
+    list = list.filter(c => c.kind === wb.kind);
+  }
   if(wb.subjects.size > 0){
     list = list.filter(c => c.subjects.some(sj => wb.subjects.has(sj)));
   }
   return list;
+}
+
+function wbKindCount(kind){
+  return TERM_CARDS.filter(c => c.kind === kind).length;
 }
 
 function renderWbSubjectChips(){
@@ -1294,12 +1341,17 @@ function renderWbCard(){
   document.getElementById('wbBackBtn').style.display = wb.idx > 0 ? 'block' : 'none';
 
   const showBack = wb.revealed || marked !== null;
-  document.getElementById('wbSide').textContent = showBack ? 'うら（意味）' : 'おもて（用語）';
+  const isPoint = (c.kind === 'point');
+  const sideText = showBack
+    ? (isPoint ? 'うら（要点）' : 'うら（意味）')
+    : (isPoint ? 'おもて（場面・テーマ）' : 'おもて（用語）');
+  document.getElementById('wbSide').innerHTML =
+    `<span class="wb-kind ${c.kind}">${WB_KIND_LABEL[c.kind]}</span><div style="margin-top:8px;">${sideText}</div>`;
   const face = document.getElementById('wbFace');
 
   if(!showBack){
     face.innerHTML = `<div class="wb-term${c.term.length >= 14 ? ' long' : ''}">${escHtml(c.term)}</div>
-      <div class="wb-ask">意味を思い出してから「めくる」を押してください。</div>`;
+      <div class="wb-ask">${isPoint ? '対応の要点' : '意味'}を思い出してから「めくる」を押してください。</div>`;
   } else {
     let alt = '';
     if(c.defs.length > 1){
@@ -1317,7 +1369,7 @@ function renderWbCard(){
     let html = '<div class="wb-meta">';
     if(kws.length) html += kws.map(k => `<span class="kw">${escHtml(k)}</span>`).join('');
     html += `<div><button type="button" class="card-add-btn${added ? ' added' : ''}" data-term="${escHtml(c.term)}" onclick="toggleTermBtn(this)">${escHtml(myTermBtnLabel(c.term, added))}</button></div>`;
-    html += `<div class="hint" style="margin-top:8px;">この用語が出てくる問題：${c.qids.length}問（問題番号で検索すると本文を見られます）</div>`;
+    html += `<div class="hint" style="margin-top:8px;">この${isPoint ? '内容' : '用語'}が出てくる問題：${c.qids.length}問（問題番号で検索すると本文を見られます）</div>`;
     html += termNotesSectionHtml(c);
     html += '</div>';
     if(marked !== null){
@@ -1416,9 +1468,10 @@ function renderMyTermsScreen(){
     const st = p[c.term];
     const badge = st === 'known' ? '<span class="wb-badge known">覚えた</span>'
                 : st === 'unsure' ? '<span class="wb-badge unsure">あとで</span>' : '';
+    const kindBadge = `<span class="wb-badge ${c.kind === 'point' ? 'unsure' : 'known'}" style="background:${c.kind === 'point' ? '#F1E3DC' : '#E9E4D6'};color:${c.kind === 'point' ? '#8C4A2F' : '#6B5A24'};">${WB_KIND_LABEL[c.kind]}</span>`;
     return `<div class="wb-row">
       <div>
-        <div class="t">${escHtml(c.term)}${badge}</div>
+        <div class="t">${escHtml(c.term)}${kindBadge}${badge}</div>
         <div class="d">${escHtml(c.defs[0])}</div>
       </div>
       <button type="button" class="card-remove-btn" data-term="${escHtml(c.term)}">× はずす</button>
@@ -2126,6 +2179,7 @@ document.getElementById('backToSetupBtn').onclick = () => {
 document.getElementById('wbStartHomeBtn').onclick = () => {
   wb.scope = 'all';
   syncWbScopeChips();
+  syncWbKindChips();
   showScreen('wbsetup');
   updateWbMatchCount();
 };
@@ -2161,6 +2215,29 @@ document.querySelectorAll('#wbScopeChips .diff-chip').forEach(chip => {
   chip.onclick = () => {
     wb.scope = chip.dataset.scope;
     syncWbScopeChips();
+    updateWbMatchCount();
+  };
+});
+
+function syncWbKindChips(){
+  document.querySelectorAll('#wbKindChips .diff-chip').forEach(c => {
+    c.classList.toggle('on', c.dataset.kind === wb.kind);
+  });
+  const hint = document.getElementById('wbKindHint');
+  if(hint){
+    hint.innerHTML = wb.kind === 'term'
+      ? '「フレイル＝加齢に伴い心身が脆弱化した状態…」のような<b>用語とその意味</b>のカードだけを出します。'
+      : wb.kind === 'point'
+        ? '「高次脳機能障害の記憶障害への支援＝メモなど外部補助手段を活用する」のような<b>場面と対応の要点</b>のカードだけを出します。'
+        : '用語のカードと、場面と対応の要点のカードの両方を出します。';
+  }
+}
+
+document.querySelectorAll('#wbKindChips .diff-chip').forEach(chip => {
+  chip.onclick = () => {
+    wb.kind = chip.dataset.kind;
+    syncWbKindChips();
+    renderWbSubjectChips();
     updateWbMatchCount();
   };
 });
@@ -2622,6 +2699,7 @@ async function initApp(){
   buildTermCards();            // 解説末尾の「用語＝意味」から単語カードを組み立てる
   migrateOldCardDeck();        // 旧マイカード帳（問題単位）をマイ単語帳（用語単位）へ引き継ぐ
   renderWbSubjectChips();
+  syncWbKindChips();
   renderWordbookHome();
   renderQuickScopeNote();
   ensureStudentId(rx ? rx.name : '');          // nameがあれば記録名入力欄にプリフィル
