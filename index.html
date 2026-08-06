@@ -33,7 +33,46 @@
   --soft:#E4EBF2;       /* バー背景などのソフト面 */
   --focus:rgba(0,90,156,.28); /* 入力欄にカーソルを合わせたときの光り方 */
   --hover-soft:#EAF1F8;       /* 一覧の項目などにカーソルを合わせたときの下地 */
+
+  /* ---- コーラル（暗記カード側の色） --------------------------------------
+     アプリアイコンのコーラル #E86A50 は白文字とのコントラストが3.18しかなく、
+     ボタンの塗りに使うと文字が読みにくい。塗りには少し濃い #C9502C（4.50＝本文基準）を使い、
+     アイコンのコーラルは細い線やバッジなど、白文字を載せない場所にとどめる。 */
+  --accent:#C9502C;
+  --accent-hover:#B34424;
+
+  /* ---- みんなのメモ（このアプリの目玉。演習にも暗記カードにも出る） ----------
+     周りの色（青／コーラル）を継ぐと場所によって色が変わってしまうので、
+     どこにいても同じ「藍」で固定する。藍はアプリアイコンの地の色。
+     ★ .acc の中でも上書きされないよう、--teal ではなく専用の変数を使うこと。 */
+  --memo:#1F304A;
+  --memo-soft:#F2F5FA;
+  --memo-line:#C9D3E0;
+
+  /* ---- 丸み（アプリアイコンの角丸に合わせた4段階。個別にpx指定しないこと） ---- */
+  --r-sm:11px;   /* 入力欄・小さな下地・タグ以外の小物 */
+  --r-md:15px;   /* ボタン・選択肢・解説の折りたたみ */
+  --r-lg:20px;   /* カード（chart-card・q-card・暗記カードの台紙） */
+  --r-pill:999px;/* チップ・バッジ・バー */
+  --shadow-sm:0 1px 3px rgba(15,32,51,.06);
+  --shadow-md:0 3px 12px rgba(15,32,51,.08);
 }
+
+/* 暗記カードの領域。ここだけ主色をコーラルに差し替える（青＝演習／コーラル＝覚える） */
+.acc{
+  --teal:var(--accent);
+  --teal-hover:var(--accent-hover);
+  --focus:rgba(201,80,44,.28);
+  --hover-soft:#FBEDE8;
+}
+
+/* アイコン。親の文字色を継ぐので、青ボタンでは白・白ボタンでは青になる */
+.ic{
+  width:1.15em;height:1.15em;vertical-align:-.22em;flex-shrink:0;
+  fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round;
+}
+.btn .ic{margin-right:7px;}
+h3 .ic{margin-right:7px;vertical-align:-.16em;}
 *{box-sizing:border-box;}
 body{
   margin:0;
@@ -55,10 +94,11 @@ header.top{
 }
 header.top h1{font-size:22px;color:var(--ink);font-weight:700;}
 .title-row{display:flex;align-items:center;gap:10px;}
-.applogo{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:block;}
+.applogo{width:36px;height:36px;border-radius:var(--r-sm);flex-shrink:0;display:block;}
 header.top .badge{
-  font-size:12px;color:#fff;background:var(--clay);
-  padding:5px 13px;border-radius:999px;font-weight:700;
+  font-size:11.5px;color:var(--muted);background:none;
+  border:1px solid var(--line);
+  padding:4px 12px;border-radius:var(--r-pill);font-weight:700;
 }
 .screen{display:none;}
 .screen.active{display:block;}
@@ -67,25 +107,23 @@ header.top .badge{
 .chart-card{
   background:var(--card);
   border:1px solid var(--line);
-  border-radius:16px;
-  box-shadow:0 1px 3px rgba(63,57,41,.05);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow-sm);
   margin-bottom:20px;
   position:relative;
   padding:22px 18px 20px;
 }
 .chart-card .tab-label{
-  position:absolute;top:-11px;left:16px;
-  background:var(--teal);color:#fff;
-  font-size:11px;letter-spacing:.06em;
-  padding:3px 12px;border-radius:999px;
-  font-weight:700;
+  display:block;color:var(--muted2);
+  font-size:10.5px;letter-spacing:.14em;font-weight:700;
+  margin-bottom:7px;
 }
-.chart-card h3{font-size:15px;color:var(--ink);margin-bottom:12px;margin-top:2px;}
+.chart-card h3{font-size:15px;color:var(--ink);margin-bottom:12px;margin-top:0;}
 
 .chip-grid{display:flex;flex-wrap:wrap;gap:8px;}
 .chip{
   border:1px solid var(--line);background:#fff;color:var(--ink);
-  font-size:13px;padding:7px 14px;border-radius:999px;cursor:pointer;
+  font-size:13px;padding:7px 14px;border-radius:var(--r-pill);cursor:pointer;
   user-select:none;transition:.15s;
 }
 .chip:hover{border-color:var(--teal);}
@@ -95,24 +133,24 @@ header.top .badge{
 .diff-row{display:flex;gap:8px;}
 .diff-chip{
   flex:1;text-align:center;border:1px solid var(--line);background:#fff;
-  padding:10px 6px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:700;
+  padding:10px 6px;border-radius:var(--r-md);cursor:pointer;font-size:13px;font-weight:700;
   transition:.15s;
 }
 .diff-chip small{display:block;font-weight:400;font-size:10.5px;opacity:.7;margin-top:2px;}
 .diff-chip.on{background:var(--teal);border-color:var(--teal);color:#fff;}
-.diff-chip[data-d="1"].on{background:#F0E7CC;border-color:var(--gold);color:#6B5A24;}
-.diff-chip[data-d="2"].on{background:#F4DFD3;border-color:var(--clay);color:#8E3A28;}
-.diff-chip[data-d="3"].on{background:#F1D8D2;border-color:var(--danger);color:#8E3A28;}
+.diff-chip[data-d="1"].on{background:var(--soft);border-color:var(--line);color:var(--muted);}
+.diff-chip[data-d="2"].on{background:var(--hover-soft);border-color:var(--teal);color:var(--teal);}
+.diff-chip[data-d="3"].on{background:#FBE4E5;border-color:var(--danger);color:#A72B32;}
 
 .kw-input{
-  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);
   font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
 }
 .kw-input:focus{outline:2px solid var(--focus);border-color:var(--teal);}
 .kw-input::placeholder{color:var(--muted2);}
 .kw-suggest{
   position:relative;background:#fff;border:1px solid var(--line);border-top:none;
-  border-radius:0 0 10px 10px;max-height:180px;overflow-y:auto;display:none;
+  border-radius:0 0 var(--r-sm) var(--r-sm);max-height:180px;overflow-y:auto;display:none;
 }
 .kw-suggest.open{display:block;}
 .kw-suggest .item{
@@ -122,7 +160,7 @@ header.top .badge{
 .kw-suggest .item .cnt{color:var(--muted2);font-size:11.5px;}
 .kw-selected-chip{
   border:1px solid var(--teal);background:var(--teal);color:#fff;
-  font-size:12.5px;padding:6px 8px 6px 12px;border-radius:999px;display:flex;align-items:center;gap:6px;
+  font-size:12.5px;padding:6px 8px 6px 12px;border-radius:var(--r-pill);display:flex;align-items:center;gap:6px;
 }
 .kw-selected-chip .x{cursor:pointer;font-weight:700;opacity:.85;}
 
@@ -132,7 +170,7 @@ header.top .badge{
 .toggle-row .desc{font-size:11.5px;color:var(--muted);margin-top:1px;}
 .switch{position:relative;width:42px;height:24px;flex-shrink:0;}
 .switch input{opacity:0;width:0;height:0;}
-.slider{position:absolute;inset:0;background:#CFC9B9;border-radius:14px;cursor:pointer;transition:.15s;}
+.slider{position:absolute;inset:0;background:#CFC9B9;border-radius:var(--r-md);cursor:pointer;transition:.15s;}
 .slider:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;}
 input:checked + .slider{background:var(--teal);}
 input:checked + .slider:before{transform:translateX(18px);}
@@ -141,7 +179,7 @@ input:checked + .slider:before{transform:translateX(18px);}
 .count-row input[type=range]{flex:1;accent-color:var(--teal);}
 .count-num{
   min-width:46px;text-align:center;font-weight:700;color:var(--teal);
-  font-size:16px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px 0;
+  font-size:16px;background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 0;
 }
 
 .hint{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
@@ -152,7 +190,7 @@ input:checked + .slider:before{transform:translateX(18px);}
 .matchcount .n{font-size:22px;font-family:'Noto Serif JP',serif;color:var(--teal);}
 
 .btn{
-  display:block;width:100%;text-align:center;padding:14px;border:none;border-radius:12px;
+  display:block;width:100%;text-align:center;padding:14px;border:none;border-radius:var(--r-md);
   font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
   letter-spacing:.02em;transition:.15s;
 }
@@ -167,28 +205,28 @@ input:checked + .slider:before{transform:translateX(18px);}
 /* ---- 出題画面 ---- */
 .quiz-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .progress-text{font-size:12.5px;color:var(--muted);font-weight:700;}
-.progress-bar{height:6px;background:var(--soft);border-radius:999px;overflow:hidden;margin-bottom:16px;}
+.progress-bar{height:6px;background:var(--soft);border-radius:var(--r-pill);overflow:hidden;margin-bottom:16px;}
 .progress-fill{height:100%;background:var(--teal);transition:.25s;}
 
 .q-card{
   background:var(--card);border:1px solid var(--line);
-  border-radius:16px;padding:20px 18px 22px;position:relative;
-  box-shadow:0 1px 3px rgba(63,57,41,.05);
+  border-radius:var(--r-lg);padding:20px 18px 22px;position:relative;
+  box-shadow:var(--shadow-sm);
 }
 .q-meta{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.q-subject{font-size:11.5px;color:#9C4A2E;font-weight:700;background:#F4E3D8;padding:3px 11px;border-radius:999px;}
+.q-subject{font-size:11.5px;color:var(--muted);font-weight:700;background:var(--soft);padding:3px 11px;border-radius:var(--r-pill);}
 .q-stamp{
   font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;
   border:2px solid;border-radius:6px;padding:2px 8px;transform:rotate(-4deg);opacity:.85;
 }
-.q-stamp.star{color:var(--gold);border-color:var(--gold);}
-.q-stamp.circle{color:var(--clay);border-color:var(--clay);}
+.q-stamp.star{color:var(--muted2);border-color:var(--muted2);}
+.q-stamp.circle{color:var(--muted);border-color:var(--muted);}
 .q-stamp.x{color:var(--danger);border-color:var(--danger);}
 .q-text{font-size:15.5px;line-height:1.8;margin-bottom:16px;white-space:pre-wrap;}
 
 .choice{
   display:flex;align-items:flex-start;gap:10px;padding:12px;margin-bottom:8px;
-  border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-size:14px;line-height:1.55;
+  border:1px solid var(--line);border-radius:var(--r-md);background:#fff;cursor:pointer;font-size:14px;line-height:1.55;
   transition:.12s;
 }
 .choice .num{
@@ -205,20 +243,21 @@ input:checked + .slider:before{transform:translateX(18px);}
 .choice.disabled{cursor:default;}
 
 .free-input{
-  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;
+  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:var(--r-sm);
   font-size:14px;font-family:inherit;margin-bottom:10px;background:#fff;
 }
 .reveal-area{
-  background:#fff;border:1px dashed #D8D2C2;border-radius:10px;padding:12px 14px;margin-top:6px;
+  background:#fff;border:1px dashed #D8D2C2;border-radius:var(--r-sm);padding:12px 14px;margin-top:6px;
 }
 .reveal-area .ans{color:var(--good);font-weight:700;margin-bottom:4px;}
 
 .feedback{
-  margin-top:14px;padding:12px 14px;border-radius:12px;font-size:13.5px;line-height:1.6;
+  margin-top:14px;padding:12px 14px;border-radius:var(--r-md);font-size:13.5px;line-height:1.6;
 }
-.feedback.ok{background:#E7EDDC;color:#445D33;}
-.feedback.ng{background:#F7E1DA;color:#8E3A28;}
-.feedback .kw,#feedbackArea .kw{display:inline-block;background:rgba(63,57,41,.07);color:#57534A;border-radius:999px;padding:2px 10px;font-size:11.5px;margin:4px 4px 0 0;}
+.feedback.ok{background:#E3F0E9;color:#256B4E;}
+.feedback.ng{background:#FBE4E5;color:#A72B32;}
+.feedback.later{background:var(--soft);color:var(--muted);}
+.feedback .kw,#feedbackArea .kw{display:inline-block;background:var(--soft);color:var(--muted);border-radius:var(--r-pill);padding:2px 10px;font-size:11.5px;margin:4px 4px 0 0;}
 
 .nav-row{display:flex;gap:10px;margin-top:16px;}
 .nav-row .btn{margin-top:0;}
@@ -230,29 +269,29 @@ input:checked + .slider:before{transform:translateX(18px);}
 .result-bars{margin:18px 0;}
 .rbar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12.5px;}
 .rbar-row .name{width:130px;flex-shrink:0;text-align:right;color:#57534A;}
-.rbar-track{flex:1;height:9px;background:var(--soft);border-radius:999px;overflow:hidden;}
-.rbar-fill{height:100%;background:var(--teal);border-radius:999px;}
+.rbar-track{flex:1;height:9px;background:var(--soft);border-radius:var(--r-pill);overflow:hidden;}
+.rbar-fill{height:100%;background:var(--teal);border-radius:var(--r-pill);}
 .rbar-row .pct{min-width:38px;flex-shrink:0;font-weight:700;color:var(--ink);white-space:nowrap;text-align:right;}
 
 .wrong-list{margin-top:6px;}
 .wrong-item{
-  background:#fff;border:1px solid var(--line);border-left:4px solid var(--danger);
-  border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:12.5px;line-height:1.6;
+  background:#fff;border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px;font-size:12.5px;line-height:1.6;
 }
-.wrong-item .subj{color:#8E3A28;font-weight:700;font-size:11px;}
+.wrong-item .subj{color:var(--muted);font-weight:700;font-size:11px;}
 
 footer.tip{font-size:11px;color:var(--muted2);text-align:center;margin-top:24px;line-height:1.7;}
 
 .search-result{
   background:var(--card);border:1px solid var(--line);
-  border-radius:14px;padding:16px;margin-bottom:12px;
-  box-shadow:0 1px 3px rgba(63,57,41,.05);
+  border-radius:var(--r-md);padding:16px;margin-bottom:12px;
+  box-shadow:var(--shadow-sm);
 }
 .search-result .sr-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px;}
 .search-result .sr-id{font-family:'Noto Serif JP',serif;font-weight:700;color:var(--teal);font-size:14px;}
 .search-result .sr-meta{font-size:11px;color:var(--muted);}
 .search-result .sr-q{font-size:14px;line-height:1.7;margin-bottom:10px;white-space:pre-wrap;}
-.search-result .sr-choice{padding:8px 11px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:13px;background:#fff;}
+.search-result .sr-choice{padding:8px 11px;border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:6px;font-size:13px;background:#fff;}
 .search-result .sr-choice.correct{border-color:var(--good);background:#E7EDDC;font-weight:700;color:#445D33;}
 .search-result .sr-empty{color:var(--muted2);font-size:13px;text-align:center;padding:20px 0;}
 
@@ -260,8 +299,8 @@ footer.tip{font-size:11px;color:var(--muted2);text-align:center;margin-top:24px;
 .kw-weak-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12.5px;}
 .kw-weak-row .rank{width:20px;flex-shrink:0;text-align:center;font-weight:700;color:var(--danger);font-family:'Noto Serif JP',serif;}
 .kw-weak-row .name{flex:1;color:#57534A;}
-.kw-weak-row .bar-track{flex:1.4;height:9px;background:var(--soft);border-radius:999px;overflow:hidden;}
-.kw-weak-row .bar-fill{height:100%;background:var(--danger);border-radius:999px;}
+.kw-weak-row .bar-track{flex:1.4;height:9px;background:var(--soft);border-radius:var(--r-pill);overflow:hidden;}
+.kw-weak-row .bar-fill{height:100%;background:var(--danger);border-radius:var(--r-pill);}
 .kw-weak-row .cnt{width:50px;flex-shrink:0;text-align:right;font-weight:700;color:var(--danger);}
 .stats-empty{color:var(--muted2);font-size:13px;text-align:center;padding:14px 0;}
 
@@ -287,8 +326,8 @@ footer.tip{font-size:11px;color:var(--muted2);text-align:center;margin-top:24px;
 .heatmap-legend .sw{width:14px;height:10px;border-radius:2px;display:inline-block;}
 
 /* ---- 解説（解答後・折りたたみ） ---- */
-details.expl{margin-top:12px;border:1px solid var(--line);border-left:3px solid var(--good);border-radius:10px;background:#fff;overflow:hidden;}
-details.expl>summary{list-style:none;cursor:pointer;padding:10px 13px;font-size:13px;font-weight:700;color:#4C6640;user-select:none;}
+details.expl{margin-top:12px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;overflow:hidden;}
+details.expl>summary{list-style:none;cursor:pointer;padding:10px 13px;font-size:13px;font-weight:700;color:var(--teal);user-select:none;}
 details.expl>summary::-webkit-details-marker{display:none;}
 details.expl>summary::before{content:"\25B8";margin-right:6px;font-size:11px;}
 details.expl[open]>summary::before{content:"\25BE";}
@@ -297,23 +336,32 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
 /* ---- 暗記カード（解説末尾の一文から自動生成） ---- */
 .card-add-btn{
   display:inline-flex;align-items:center;gap:4px;margin-top:10px;
-  border:1px solid var(--gold);background:#fff;color:#6B5A24;
-  font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--accent);background:#fff;color:var(--accent);
+  font-size:12px;font-weight:700;padding:6px 12px;border-radius:var(--r-pill);cursor:pointer;
   font-family:'Noto Sans JP',sans-serif;transition:.15s;
 }
 .card-add-btn:hover{background:var(--hover-soft);}
-.card-add-btn.added{background:#F0E7CC;}
+.card-add-btn.added{background:#FBEDE8;border-color:var(--accent);}
 .card-remove-btn{
   flex-shrink:0;border:1px solid var(--line);background:#fff;color:var(--muted);
-  font-size:11px;padding:4px 10px;border-radius:999px;cursor:pointer;
+  font-size:11px;padding:4px 10px;border-radius:var(--r-pill);cursor:pointer;
   font-family:'Noto Sans JP',sans-serif;
 }
 .card-remove-btn:hover{border-color:var(--danger);color:var(--danger);}
 .btn-secondary:disabled,.btn-ghost:disabled{opacity:.45;cursor:not-allowed;}
 .wb-stage{
-  background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);
-  border-radius:14px;padding:26px 20px;box-shadow:0 1px 3px rgba(63,57,41,.05);
+  position:relative;background:#fff;border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:28px 20px;
   min-height:190px;display:flex;flex-direction:column;justify-content:center;
+  margin-top:14px;
+  /* うしろにもう2枚のカードが重なって覗く。アイコンの「重なった2枚」と同じ見立て。
+     box-shadowを段に重ねて描いている（要素を増やさずに済む） */
+  box-shadow:
+    0 -6px 0 -2px #fff,
+    0 -6px 0 -1px var(--line),
+    0 -11px 0 -4px var(--card),
+    0 -11px 0 -3px var(--line),
+    var(--shadow-md);
 }
 .wb-side{font-size:11px;color:var(--muted2);letter-spacing:.1em;margin-bottom:12px;text-align:center;}
 .wb-term{font-family:'Noto Serif JP',serif;font-size:23px;font-weight:700;color:var(--ink);line-height:1.5;text-align:center;word-break:break-word;}
@@ -327,47 +375,59 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
 .wb-row:last-child{border-bottom:none;}
 .wb-row .t{font-weight:700;font-size:13.5px;color:var(--ink);line-height:1.6;}
 .wb-row .d{font-size:12.5px;color:var(--muted);line-height:1.75;margin-top:3px;}
-.wb-badge{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:2px;}
-.wb-badge.known{background:#E4EDDD;color:#4C6640;}
-.wb-badge.unsure{background:#F6E3DC;color:#8E3A28;}
+.wb-badge{display:inline-block;font-size:10.5px;font-weight:700;border-radius:var(--r-pill);padding:1px 8px;margin-left:6px;vertical-align:2px;}
+.wb-badge.known{background:#E3F0E9;color:#256B4E;}
+.wb-badge.unsure{background:var(--soft);color:var(--muted);}
 .section-head{
   font-family:'Noto Serif JP',serif;font-size:13px;font-weight:700;color:var(--muted);
   letter-spacing:.04em;margin:26px 2px 10px;padding-bottom:6px;border-bottom:1px solid var(--line);
+  position:relative;
 }
-.wb-kind{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 10px;}
-.wb-kind.term{background:#E9E4D6;color:#6B5A24;}
-.wb-kind.point{background:#F1E3DC;color:#8C4A2F;}
+/* 見出しの下線の左端だけ、その領域の色にする（演習＝青／暗記カード＝コーラル） */
+.section-head::after{
+  content:'';position:absolute;left:0;bottom:-1px;width:52px;height:2px;border-radius:2px;
+  background:var(--teal);
+}
+.section-head.acc::after{background:var(--accent);}
+.wb-kind{display:inline-block;font-size:10.5px;font-weight:700;border-radius:var(--r-pill);padding:2px 10px;}
+.wb-kind{border:1px solid var(--line);}
+.wb-kind.term{background:none;color:var(--muted);}
+.wb-kind.point{background:var(--soft);color:var(--muted);border-color:transparent;}
 .wb-count{font-size:13px;color:var(--muted);margin-bottom:10px;}
 .wb-count b{font-family:'Noto Serif JP',serif;font-size:19px;color:var(--teal);font-weight:700;margin:0 2px;}
 .expl-summary{
-  margin-top:8px;padding:8px 10px;background:#F0E7CC;border-radius:8px;
+  margin-top:8px;padding:8px 10px;background:#F0E7CC;border-radius:var(--r-sm);
   font-size:13px;line-height:1.7;color:var(--ink);
 }
 #wbFace .kw,#wbMetaArea .kw,#idSearchResults .kw{
   display:inline-block;background:rgba(63,57,41,.07);color:#57534A;
-  border-radius:999px;padding:2px 10px;font-size:11.5px;margin:4px 4px 0 0;
+  border-radius:var(--r-pill);padding:2px 10px;font-size:11.5px;margin:4px 4px 0 0;
 }
 
 /* ---- パートチップ（パート合格制度） ---- */
-.part-chip{font-weight:700;border-color:var(--gold);}
+.part-chip{font-weight:700;}
 .part-chip .part-time{font-size:10.5px;font-weight:400;color:var(--muted2);margin-left:5px;}
 .part-chip.on .part-time{color:rgba(255,255,255,.8);}
 
 /* ---- みんなのメモ（解説の学生クラウドソーシング） ---- */
-details.notes-sec{margin-top:10px;border:1px solid var(--line);border-left:3px solid var(--clay);border-radius:10px;background:#fff;overflow:hidden;}
-details.notes-sec>summary{list-style:none;cursor:pointer;padding:10px 13px;font-size:13px;font-weight:700;color:#8C4A2F;user-select:none;}
+details.notes-sec{margin-top:12px;border:1px solid var(--memo-line);border-radius:var(--r-md);background:#fff;overflow:hidden;}
+details.notes-sec>summary{
+  list-style:none;cursor:pointer;padding:11px 14px;font-size:13px;font-weight:700;
+  color:var(--memo);background:var(--memo-soft);user-select:none;
+}
+details.notes-sec[open]>summary{border-bottom:1px solid var(--memo-line);}
 details.notes-sec>summary::-webkit-details-marker{display:none;}
 details.notes-sec>summary::before{content:"\25B8";margin-right:6px;font-size:11px;}
 details.notes-sec[open]>summary::before{content:"\25BE";}
 .notes-body{padding:2px 12px 12px;}
-.note-card{border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px;background:var(--card);}
-.note-card.mine{background:#F4F1E8;border-style:dashed;}
+.note-card{border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 11px;margin-bottom:8px;background:var(--card);}
+.note-card.mine{background:var(--memo-soft);border-style:dashed;}
 .note-badges{margin-bottom:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
-.note-lang-badge{background:var(--clay);color:#fff;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 9px;}
-.note-type-badge{background:rgba(63,57,41,.08);color:#57534A;font-size:10.5px;border-radius:999px;padding:2px 9px;}
-.note-status{font-size:10.5px;border-radius:999px;padding:2px 9px;font-weight:700;}
-.note-status.pending{background:#F5E9C9;color:#7C5A16;}
-.note-status.rejected{background:#F6DFD4;color:#8E3A28;}
+.note-lang-badge{background:var(--teal-deep);color:#fff;font-size:10.5px;font-weight:700;border-radius:var(--r-pill);padding:2px 9px;}
+.note-type-badge{background:rgba(63,57,41,.08);color:#57534A;font-size:10.5px;border-radius:var(--r-pill);padding:2px 9px;}
+.note-status{font-size:10.5px;border-radius:var(--r-pill);padding:2px 9px;font-weight:700;}
+.note-status.pending{background:var(--soft);color:var(--muted);}
+.note-status.rejected{background:#FBE4E5;color:#A72B32;}
 .note-reason{font-size:10.5px;color:var(--muted);}
 .note-body{font-size:13px;line-height:1.7;color:var(--ink);white-space:pre-wrap;word-break:break-word;}
 .note-meta{display:flex;gap:10px;align-items:center;margin-top:6px;font-size:11px;color:var(--muted);flex-wrap:wrap;}
@@ -376,22 +436,22 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 .note-report-done{font-size:10.5px;color:var(--muted2);}
 .note-empty{font-size:12px;color:var(--muted);padding:4px 0 8px;}
 .note-disclaimer{
-  font-size:11.5px;line-height:1.75;color:#6E6A5E;background:#F4F1E8;
-  border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-bottom:9px;
+  font-size:11.5px;line-height:1.75;color:var(--muted);background:var(--memo-soft);
+  border:1px solid var(--memo-line);border-radius:var(--r-sm);padding:9px 12px;margin-bottom:10px;
 }
 .note-form{border-top:1px dashed var(--line);padding-top:10px;margin-top:4px;}
 .note-hint{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:7px;}
 .note-form-row{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
-.note-form select,.note-lang-free{font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);}
+.note-form select,.note-lang-free{font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;color:var(--ink);}
 .note-lang-free{display:none;width:100%;margin-bottom:6px;}
-.note-body-input{width:100%;min-height:64px;font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;color:var(--ink);}
-.note-body-input:focus{outline:2px solid var(--focus);border-color:var(--teal);}
+.note-body-input{width:100%;min-height:64px;font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);resize:vertical;background:#fff;color:var(--ink);}
+.note-body-input:focus{outline:2px solid rgba(31,48,74,.24);border-color:var(--memo);}
 .note-form-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
 .note-count{font-size:11px;color:var(--muted2);}
-.btn-note-submit{background:var(--teal);color:#fff;border:none;border-radius:999px;padding:7px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-note-submit{background:var(--memo);color:#fff;border:none;border-radius:var(--r-pill);padding:7px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
 .btn-note-submit:disabled{opacity:.5;cursor:not-allowed;}
 .note-form-msg{font-size:12px;color:var(--danger);margin-top:5px;line-height:1.6;}
-.note-thanks{background:#E7EDDC;color:#445D33;border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:700;}
+.note-thanks{background:#E3F0E9;color:#256B4E;border-radius:var(--r-sm);padding:9px 12px;font-size:12.5px;font-weight:700;}
 .note-mine-label{font-size:11px;color:var(--muted);margin:6px 0 4px;font-weight:700;}
 </style>
 </head>
@@ -402,6 +462,31 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
     問題データの取得に失敗しました。通信環境をご確認のうえ、ページを再読み込みしてください。
   </div>
 </div>
+<!-- ============ アイコン ============
+  アプリアイコン（藍の角丸＋太い丸ペン先のシェブロン2枚）に合わせた線画アイコン。
+  ・線の太さ2.15／角と端は丸／単色（stroke:currentColor で親の文字色を継ぐ）
+  ・絵文字と違って端末やOSで見た目が変わらない
+  使い方： <svg class="ic"><use href="#i-なまえ"/></svg>   JSからは ic('なまえ')
+  ================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-chev2up" viewBox="0 0 24 24"><path d="M5 12.5 L12 6.2 L19 12.5"/><path d="M5 19 L12 12.7 L19 19"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.2"/><circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M12.6 2.9c.2 2.6-.9 4-2.1 5.2-1.6 1.6-3.3 3.2-3.3 6a5.9 5.9 0 0 0 11.8 0c0-3.4-2.4-5.3-3.6-7.6-.5 1.6-1.5 2.4-2.3 2.8.4-2.3.4-4.5-.5-6.4z"/><path d="M12 20.5a3 3 0 0 1-3-3c0-1.7 1.4-2.6 2.3-4 .8 1.2 3.7 2.2 3.7 4a3 3 0 0 1-3 3z" fill="currentColor" stroke="none" opacity=".28"/></symbol>
+<symbol id="i-cards" viewBox="0 0 24 24"><rect x="3.8" y="7.2" width="12.6" height="12.6" rx="3"/><path d="M8.2 4.2h8.6a3 3 0 0 1 3 3v8.6"/></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6.8 4.4h10.4a1 1 0 0 1 1 1v14.9l-6.2-4.2-6.2 4.2V5.4a1 1 0 0 1 1-1z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.6"/><path d="M16 16 L20.6 20.6"/></symbol>
+<symbol id="i-bars" viewBox="0 0 24 24"><path d="M6 20.2V14"/><path d="M12 20.2V4.8"/><path d="M18 20.2V9.5"/></symbol>
+<symbol id="i-chevL" viewBox="0 0 24 24"><path d="M14.6 5.4 L8.1 12 L14.6 18.6"/></symbol>
+<symbol id="i-chevR" viewBox="0 0 24 24"><path d="M9.4 5.4 L15.9 12 L9.4 18.6"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><rect x="4.8" y="4.6" width="14.4" height="15.6" rx="2.6"/><path d="M9 4.6V3.3h6v1.3"/><path d="M8.6 11h6.8"/><path d="M8.6 15h4.6"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V3.6"/><path d="M6 4.6h11.2l-2.3 3.5 2.3 3.5H6"/></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="M4.4 19.6l4.3-1.1 10-10-3.2-3.2-10 10z"/><path d="M14.4 6.4l3.2 3.2"/></symbol>
+<symbol id="i-speech" viewBox="0 0 24 24"><path d="M4.6 6.8a2.2 2.2 0 0 1 2.2-2.2h10.4a2.2 2.2 0 0 1 2.2 2.2v6.8a2.2 2.2 0 0 1-2.2 2.2H10.4L6.2 19.6v-3.8a2.2 2.2 0 0 1-1.6-2.2z"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8"/><path d="M12 3.6c2.2 2.4 3.3 5.2 3.3 8.4S14.2 18 12 20.4C9.8 18 8.7 15.2 8.7 12S9.8 6 12 3.6z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.6 L9.8 17.4 L19 7"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9.2 17.6a6.4 6.4 0 1 1 5.6 0"/><path d="M9.4 17.6h5.2"/><path d="M10.2 20.6h3.6"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.8 L21.4 20 H2.6 Z"/><path d="M12 9.8v4.2"/><circle cx="12" cy="17.2" r="1.1" fill="currentColor" stroke="none"/></symbol>
+</defs></svg>
 <div class="app">
 
   <header class="top">
@@ -418,10 +503,10 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 
   <!-- ============ 記録名（studentId）入力モーダル ============ -->
   <div id="studentIdModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:999;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:var(--card);border-radius:18px;padding:26px;max-width:340px;width:100%;border:1px solid var(--line);">
+    <div style="background:var(--card);border-radius:var(--r-lg);padding:26px;max-width:340px;width:100%;border:1px solid var(--line);">
       <h3 style="margin:0 0 10px;">記録名を入力してください</h3>
       <p style="font-size:12.5px;color:#666;margin:0 0 14px;line-height:1.6;">演習の履歴を記録するための名前または出席番号です。一度入力すると、この端末では次回から表示されません。</p>
-      <input id="studentIdInput" type="text" placeholder="例：13番 または 山田" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff;">
+      <input id="studentIdInput" type="text" placeholder="例：13番 または 山田" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:14px;background:#fff;">
       <div id="studentIdError" style="display:none;color:var(--danger);font-size:12px;margin-top:6px;">名前または出席番号を入力してください。</div>
       <button id="studentIdSaveBtn" class="btn btn-primary" style="margin-top:14px;width:100%;">保存して始める</button>
     </div>
@@ -431,23 +516,23 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
   <section class="screen active" id="screen-setup">
 
     <!-- カルテ処方箋モード（QR ?name=&kw= から開いたときだけ表示） -->
-    <div class="chart-card" id="rxBanner" style="display:none;border-left-color:var(--teal);background:#FBF3EF;">
-      <div class="tab-label" style="background:var(--teal);">カルテ処方箋</div>
-      <h3 style="margin-bottom:6px;">📋 <span id="rxBannerName"></span>さんの弱点で絞り込み中</h3>
+    <div class="chart-card" id="rxBanner" style="display:none;background:var(--hover-soft);">
+      <div class="tab-label">カルテ処方箋</div>
+      <h3 style="margin-bottom:6px;"><svg class="ic"><use href="#i-clip"/></svg><span id="rxBannerName"></span>さんの弱点で絞り込み中</h3>
       <div class="hint" id="rxBannerDetail" style="margin-top:0;margin-bottom:12px;"></div>
-      <button class="btn btn-primary" id="rxStartBtn" style="margin-top:0;margin-bottom:8px;">▶ この弱点範囲で演習を始める</button>
+      <button class="btn btn-primary" id="rxStartBtn" style="margin-top:0;margin-bottom:8px;"><svg class="ic"><use href="#i-chevR"/></svg>この弱点範囲で演習を始める</button>
       <button class="btn btn-ghost" id="rxClearBtn" style="margin-top:0;">絞り込みを解除して全体から出題する</button>
     </div>
 
-    <div class="chart-card" id="goalCard" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">今日の目標</div>
-      <h3>🎯 今日の<span id="goalTitleNum">17</span>問　<span id="goalDoneBadge" style="display:none;font-size:12px;color:var(--good);font-family:'Noto Sans JP',sans-serif;font-weight:700;">✓ 達成！</span></h3>
+    <div class="chart-card" id="goalCard">
+      <div class="tab-label">今日の目標</div>
+      <h3><svg class="ic"><use href="#i-target"/></svg>今日の<span id="goalTitleNum">17</span>問　<span id="goalDoneBadge" style="display:none;font-size:12px;color:var(--good);font-family:'Noto Sans JP',sans-serif;font-weight:700;">✓ 達成！</span></h3>
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin:10px 0 6px;">
         <div style="font-size:13px;color:var(--muted);">今日 <span id="goalToday" style="font-family:'Noto Serif JP',serif;font-size:22px;color:var(--teal);font-weight:700;">0</span> / <span id="goalTargetLabel">17問</span></div>
-        <div style="font-size:13px;color:var(--muted);">🔥 連続 <span id="goalStreak" style="font-weight:700;color:var(--danger);">0</span>日</div>
+        <div style="font-size:13px;color:var(--muted);"><svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:4px;"><use href="#i-flame"/></svg>連続 <span id="goalStreak" style="font-weight:700;color:var(--danger);">0</span>日</div>
       </div>
       <div class="progress-bar" style="margin-bottom:14px;"><div class="progress-fill" id="goalProgressFill" style="width:0%;"></div></div>
-      <button class="btn btn-primary" id="quickStartBtn">⚡ 今日の分に挑戦する</button>
+      <button class="btn btn-primary" id="quickStartBtn"><svg class="ic"><use href="#i-chev2up"/></svg>今日の分に挑戦する</button>
       <div class="count-row" style="margin-top:14px;">
         <input type="range" id="goalRange" min="5" max="30" step="1" value="17">
         <div class="count-num" id="goalRangeNum">17問</div>
@@ -458,7 +543,7 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
     <div class="section-head">演習（問題を解く）</div>
 
     <div class="chart-card" id="partCard">
-      <div class="tab-label" style="background:var(--gold);">パート</div>
+      <div class="tab-label">パート</div>
       <h3>パートで選ぶ</h3>
       <div class="hint" style="margin-top:0;margin-bottom:12px;">
         第38回（2026年1月）から、国家試験は<b>A・B・Cの3パート</b>に分かれました。
@@ -514,34 +599,34 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
     <div class="matchcount">条件に一致する問題：<span class="n" id="matchN">0</span> 問</div>
     <button class="btn btn-primary" id="startBtn">演習を始める</button>
 
-    <div class="section-head">暗記カード（用語・要点を覚える）</div>
+    <div class="section-head acc">暗記カード（用語・要点を覚える）</div>
 
-    <div class="chart-card" id="wbCard" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">暗記カード</div>
-      <h3>📖 暗記カード（<span id="wbTotalHead">0</span>枚）</h3>
+    <div class="chart-card acc" id="wbCard">
+      <div class="tab-label">暗記カード</div>
+      <h3><svg class="ic"><use href="#i-cards"/></svg>暗記カード（<span id="wbTotalHead">0</span>枚）</h3>
       <div class="hint" style="margin-top:0;margin-bottom:12px;">解説のいちばん最後の一文から自動でつくったカードです。おもてを見て思い出し、めくって自分で「覚えた／あとで」をつけます。<b>問題を解く演習とは別の機能</b>です。</div>
       <div class="wb-count">覚えた <b id="wbKnownCount">0</b> 枚　マイカード <b id="wbMyCount">0</b> 枚<span id="wbTotal" style="display:none;">0</span></div>
       <div style="font-size:11.5px;color:var(--muted2);margin:-4px 0 10px;">内訳：<b id="wbTermCount">0</b> 枚が用語（フレイル＝…）／ <b id="wbPointCount">0</b> 枚がポイント（場面と対応の要点）</div>
       <div class="progress-bar" style="margin-bottom:14px;"><div class="progress-fill" id="wbHomeFill" style="width:0%;"></div></div>
-      <button class="btn btn-primary" id="wbStartHomeBtn">📖 暗記カードを開く</button>
+      <button class="btn btn-primary" id="wbStartHomeBtn"><svg class="ic"><use href="#i-cards"/></svg>暗記カードを開く</button>
       <div class="nav-row" style="margin-top:10px;">
         <button class="btn btn-secondary" id="wbQuickUnknownBtn" style="margin-top:0;">まだのカードだけ</button>
-        <button class="btn btn-ghost" id="wbMyListBtn" style="margin-top:0;">🔖 マイカード</button>
+        <button class="btn btn-ghost" id="wbMyListBtn" style="margin-top:0;"><svg class="ic"><use href="#i-bookmark"/></svg>マイカード</button>
       </div>
     </div>
 
-    <div class="section-head">そのほか</div>
+    <div class="section-head" style="--teal:var(--muted2);">そのほか</div>
 
-    <button class="btn btn-ghost" id="goSearchBtn">🔍 問題番号で検索する</button>
-    <button class="btn btn-ghost" id="goStatsBtn">📊 学習履歴・弱点分析を見る</button>
+    <button class="btn btn-ghost" id="goSearchBtn"><svg class="ic"><use href="#i-search"/></svg>問題番号で検索する</button>
+    <button class="btn btn-ghost" id="goStatsBtn"><svg class="ic"><use href="#i-bars"/></svg>学習履歴・弱点分析を見る</button>
   </section>
 
   <!-- ============ 履歴・分析画面 ============ -->
   <section class="screen" id="screen-stats">
-    <button id="homeFromStatsBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+    <button id="homeFromStatsBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;"><svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:3px;"><use href="#i-chevL"/></svg>ホームに戻る</button>
 
-    <div class="chart-card" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">概況</div>
+    <div class="chart-card">
+      <div class="tab-label">概況</div>
       <h3>これまでの演習</h3>
       <div id="statsOverview" class="hint"></div>
     </div>
@@ -558,8 +643,8 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <div id="statsSubjects" class="result-bars"></div>
     </div>
 
-    <div class="chart-card" style="border-left-color:var(--danger);">
-      <div class="tab-label" style="background:var(--danger);">弱点</div>
+    <div class="chart-card">
+      <div class="tab-label">弱点</div>
       <h3>苦手キーワード TOP10</h3>
       <div id="statsWeakKw"></div>
     </div>
@@ -567,15 +652,15 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
     <button class="btn btn-secondary" id="backToSetupFromStatsBtn">設定画面に戻る</button>
     <button class="btn btn-ghost" id="resetHistoryBtn" style="color:var(--danger);border-color:var(--danger);">履歴をすべて削除する</button>
     <div id="resetConfirmRow" style="display:none;align-items:center;gap:8px;font-size:12px;margin-top:8px;justify-content:center;">
-      <span style="color:#8E3A28;">本当に削除しますか？元に戻せません。</span>
-      <button id="resetConfirmYes" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">削除する</button>
-      <button id="resetConfirmNo" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">やめる</button>
+      <span style="color:var(--danger);">本当に削除しますか？元に戻せません。</span>
+      <button id="resetConfirmYes" style="background:var(--danger);color:#fff;border:none;border-radius:var(--r-sm);padding:5px 12px;font-size:11.5px;cursor:pointer;">削除する</button>
+      <button id="resetConfirmNo" style="background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 12px;font-size:11.5px;cursor:pointer;">やめる</button>
     </div>
   </section>
 
   <!-- ============ 検索画面 ============ -->
   <section class="screen" id="screen-search">
-    <button id="homeFromSearchBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+    <button id="homeFromSearchBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;"><svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:3px;"><use href="#i-chevL"/></svg>ホームに戻る</button>
     <div class="chart-card">
       <div class="tab-label">検索</div>
       <h3>問題番号で検索</h3>
@@ -588,11 +673,11 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
   <!-- ============ 出題画面 ============ -->
   <section class="screen" id="screen-quiz">
     <div class="quiz-head">
-      <button id="homeFromQuizBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+      <button id="homeFromQuizBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;cursor:pointer;text-decoration:underline;"><svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:3px;"><use href="#i-chevL"/></svg>ホームに戻る</button>
       <div id="homeConfirmRow" style="display:none;align-items:center;gap:8px;font-size:12px;">
-        <span style="color:#8E3A28;">進行状況が失われます。</span>
-        <button id="homeConfirmYes" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11.5px;cursor:pointer;">戻る</button>
-        <button id="homeConfirmNo" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:11.5px;cursor:pointer;">やめる</button>
+        <span style="color:var(--danger);">進行状況が失われます。</span>
+        <button id="homeConfirmYes" style="background:var(--danger);color:#fff;border:none;border-radius:var(--r-sm);padding:4px 10px;font-size:11.5px;cursor:pointer;">戻る</button>
+        <button id="homeConfirmNo" style="background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);padding:4px 10px;font-size:11.5px;cursor:pointer;">やめる</button>
       </div>
       <div class="progress-text" id="liveScore">正解 0</div>
     </div>
@@ -617,7 +702,7 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <div id="feedbackArea"></div>
 
       <div class="nav-row">
-        <button class="btn btn-secondary" id="backBtn" style="margin-top:0;display:none;">← 前の問題へ</button>
+        <button class="btn btn-secondary" id="backBtn" style="margin-top:0;display:none;"><svg class="ic"><use href="#i-chevL"/></svg>前の問題へ</button>
         <button class="btn btn-primary" id="answerBtn">解答する</button>
         <button class="btn btn-primary" id="nextBtn" style="display:none;">次の問題へ</button>
       </div>
@@ -626,8 +711,8 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 
   <!-- ============ 結果画面 ============ -->
   <section class="screen" id="screen-result">
-    <div class="chart-card" style="border-left-color:var(--clay);">
-      <div class="tab-label" style="background:var(--clay);">結果</div>
+    <div class="chart-card">
+      <div class="tab-label">結果</div>
       <div class="result-hero">
         <div class="score" id="resultScore">0 / 0</div>
         <div class="label">正答率 <span id="resultPct">0%</span></div>
@@ -639,7 +724,7 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <div class="tab-label">復習</div>
       <h3>間違えた問題</h3>
       <div class="wrong-list" id="wrongList"></div>
-      <button class="btn btn-ghost" id="bulkAddWrongBtn" style="display:none;">🔖 間違えた問題のカードをまとめてマイカードに登録</button>
+      <button class="btn btn-ghost" id="bulkAddWrongBtn" style="display:none;color:var(--accent);border-color:var(--accent);"><svg class="ic"><use href="#i-bookmark"/></svg>間違えた問題のカードをまとめてマイカードに登録</button>
     </div>
 
     <button class="btn btn-primary" id="retryWrongBtn" style="display:none;">間違えた問題だけ再演習</button>
@@ -647,11 +732,11 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
   </section>
 
   <!-- ============ 暗記カード：範囲を選ぶ ============ -->
-  <section class="screen" id="screen-wbsetup">
-    <button id="homeFromWbSetupBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+  <section class="screen acc" id="screen-wbsetup">
+    <button id="homeFromWbSetupBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;"><svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:3px;"><use href="#i-chevL"/></svg>ホームに戻る</button>
 
-    <div class="chart-card" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">暗記カード</div>
+    <div class="chart-card">
+      <div class="tab-label">暗記カード</div>
       <h3>覚える範囲を選ぶ</h3>
       <div class="hint" style="margin-top:0;margin-bottom:12px;">カードは、各問題の解説の最後の一文から自動で作られています。おもてが「用語」のものと「場面・テーマ」のものがあり、同じ見出しは1枚にまとめてあります。</div>
       <div class="diff-row" id="wbScopeChips">
@@ -688,13 +773,13 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
     </div>
 
     <div class="matchcount">この条件のカード：<span class="n" id="wbMatchN">0</span> 枚</div>
-    <button class="btn btn-primary" id="wbStartBtn">📖 めくり始める</button>
+    <button class="btn btn-primary" id="wbStartBtn"><svg class="ic"><use href="#i-cards"/></svg>めくり始める</button>
   </section>
 
   <!-- ============ 暗記カード：めくり画面 ============ -->
-  <section class="screen" id="screen-wb">
+  <section class="screen acc" id="screen-wb">
     <div class="quiz-head">
-      <button id="homeFromWbBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
+      <button id="homeFromWbBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;cursor:pointer;text-decoration:underline;"><svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:3px;"><use href="#i-chevL"/></svg>ホームに戻る</button>
       <div class="progress-text" id="wbLiveScore">覚えた 0</div>
     </div>
     <div class="progress-text" id="wbProgressText" style="margin-bottom:8px;">1 / 20 枚</div>
@@ -711,7 +796,7 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <div id="wbMetaArea"></div>
 
       <div class="nav-row">
-        <button class="btn btn-secondary" id="wbBackBtn" style="margin-top:0;display:none;">← 前のカードへ</button>
+        <button class="btn btn-secondary" id="wbBackBtn" style="margin-top:0;display:none;"><svg class="ic"><use href="#i-chevL"/></svg>前のカードへ</button>
         <button class="btn btn-primary" id="wbFlipBtn">めくる（意味を見る）</button>
       </div>
       <div id="wbRateRow" style="display:none;"></div>
@@ -719,9 +804,9 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
   </section>
 
   <!-- ============ 暗記カード：結果 ============ -->
-  <section class="screen" id="screen-wbresult">
-    <div class="chart-card" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">暗記カードの結果</div>
+  <section class="screen acc" id="screen-wbresult">
+    <div class="chart-card">
+      <div class="tab-label">暗記カードの結果</div>
       <div class="result-hero">
         <div class="score" id="wbResScore">0 / 0</div>
         <div class="label">覚えた <span id="wbResPct">0%</span></div>
@@ -729,33 +814,33 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <div class="hint" style="text-align:center;">この結果は端末の中だけに残ります（演習の学習履歴とは別に管理され、先生の集計には送られません）。</div>
     </div>
 
-    <div class="chart-card" id="wbUnsureCard" style="display:none;border-left-color:var(--danger);">
-      <div class="tab-label" style="background:var(--danger);">あとでもう一度</div>
+    <div class="chart-card" id="wbUnsureCard" style="display:none;">
+      <div class="tab-label">あとでもう一度</div>
       <h3>△ をつけたカード</h3>
       <div id="wbUnsureList" style="margin-top:8px;"></div>
-      <button class="btn btn-ghost" id="wbAddUnsureBtn" style="margin-top:12px;">🔖 まとめてマイカードに登録</button>
+      <button class="btn btn-ghost" id="wbAddUnsureBtn" style="margin-top:12px;"><svg class="ic"><use href="#i-bookmark"/></svg>まとめてマイカードに登録</button>
     </div>
 
     <button class="btn btn-primary" id="wbRetryUnsureBtn" style="display:none;">△ のカードだけもう一度めくる</button>
     <button class="btn btn-secondary" id="wbAgainBtn">範囲を変えてもう一度</button>
-    <button class="btn btn-ghost" id="wbHomeFromResultBtn">🏠 ホームに戻る</button>
+    <button class="btn btn-ghost" id="wbHomeFromResultBtn"><svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:3px;"><use href="#i-chevL"/></svg>ホームに戻る</button>
   </section>
 
   <!-- ============ マイカード画面 ============ -->
-  <section class="screen" id="screen-myterms">
-    <button id="homeFromMyTermsBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
-    <div class="chart-card" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">マイカード</div>
+  <section class="screen acc" id="screen-myterms">
+    <button id="homeFromMyTermsBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;"><svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:3px;"><use href="#i-chevL"/></svg>ホームに戻る</button>
+    <div class="chart-card">
+      <div class="tab-label">マイカード</div>
       <h3>マイカード（<span id="myTermsCount">0枚</span>）</h3>
-      <div class="hint">演習の解答後やカードのうら面に出る「🔖 マイカードに登録」で貯めたカードです。覚えたものは「× はずす」で整理しましょう。</div>
+      <div class="hint">演習の解答後やカードのうら面に出る「<svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:3px;"><use href="#i-bookmark"/></svg>マイカードに登録」で貯めたカードです。覚えたものは「× はずす」で整理しましょう。</div>
       <div id="myTermsList" style="margin-top:12px;"></div>
     </div>
-    <button class="btn btn-primary" id="myTermsStudyBtn">📖 マイカードをめくる</button>
+    <button class="btn btn-primary" id="myTermsStudyBtn"><svg class="ic"><use href="#i-cards"/></svg>マイカードをめくる</button>
     <button class="btn btn-ghost" id="myTermsClearBtn" style="color:var(--danger);border-color:var(--danger);">マイカードを空にする</button>
     <div id="myTermsClearConfirmRow" style="display:none;align-items:center;gap:8px;font-size:12px;margin-top:8px;justify-content:center;">
-      <span style="color:#8E3A28;">マイカードを空にしますか？元に戻せません。</span>
-      <button id="myTermsClearYes" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">空にする</button>
-      <button id="myTermsClearNo" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">やめる</button>
+      <span style="color:var(--danger);">マイカードを空にしますか？元に戻せません。</span>
+      <button id="myTermsClearYes" style="background:var(--danger);color:#fff;border:none;border-radius:var(--r-sm);padding:5px 12px;font-size:11.5px;cursor:pointer;">空にする</button>
+      <button id="myTermsClearNo" style="background:#fff;border:1px solid var(--line);border-radius:var(--r-sm);padding:5px 12px;font-size:11.5px;cursor:pointer;">やめる</button>
     </div>
   </section>
 
@@ -1044,6 +1129,10 @@ document.addEventListener('click', e => {
   }
 });
 
+// アイコンをJSから差し込む。定義は本文冒頭の <defs> にまとめてある
+function ic(name){ return '<svg class="ic"><use href="#i-' + name + '"/></svg>'; }
+function icS(name, mr){ return '<svg class="ic" style="width:1em;height:1em;vertical-align:-.17em;margin-right:' + (mr || 4) + 'px;"><use href="#i-' + name + '"/></svg>'; }
+
 function escHtml(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -1225,19 +1314,20 @@ function migrateOldCardDeck(){
 
 /* ---- 演習の解説の下に出す「マイカードに登録」ボタン ---- */
 function myTermBtnLabel(term, added){
-  return added ? `✓「${term}」を登録済み（タップで解除）` : `🔖「${term}」をマイカードに登録`;
+  const t = escHtml(term);
+  return added ? `✓「${t}」を登録済み（タップで解除）` : `${icS('bookmark', 3)}「${t}」をマイカードに登録`;
 }
 function termBtnHtml(q){
   const c = termCardOf(q);
   if(!c) return '';                                  // 用語＝意味の形の解説がない問題では出さない
   const added = isMyTerm(c.term);
-  return `<div><button type="button" class="card-add-btn${added ? ' added' : ''}" data-term="${escHtml(c.term)}" onclick="toggleTermBtn(this)">${escHtml(myTermBtnLabel(c.term, added))}</button></div>`;
+  return `<div><button type="button" class="card-add-btn${added ? ' added' : ''}" data-term="${escHtml(c.term)}" onclick="toggleTermBtn(this)">${myTermBtnLabel(c.term, added)}</button></div>`;
 }
 function toggleTermBtn(btn){
   const term = btn.dataset.term;
   const now = toggleMyTerm(term);
   btn.classList.toggle('added', now);
-  btn.textContent = myTermBtnLabel(term, now);
+  btn.innerHTML = myTermBtnLabel(term, now);
   renderWordbookHome();
 }
 
@@ -1382,12 +1472,12 @@ function renderWbCard(){
     const added = isMyTerm(c.term);
     let html = '<div class="wb-meta">';
     if(kws.length) html += kws.map(k => `<span class="kw">${escHtml(k)}</span>`).join('');
-    html += `<div><button type="button" class="card-add-btn${added ? ' added' : ''}" data-term="${escHtml(c.term)}" onclick="toggleTermBtn(this)">${escHtml(myTermBtnLabel(c.term, added))}</button></div>`;
+    html += `<div><button type="button" class="card-add-btn${added ? ' added' : ''}" data-term="${escHtml(c.term)}" onclick="toggleTermBtn(this)">${myTermBtnLabel(c.term, added)}</button></div>`;
     html += `<div class="hint" style="margin-top:8px;">このカードのもとになった問題：${c.qids.length}問（問題番号で検索すると本文を見られます）</div>`;
     html += termNotesSectionHtml(c);
     html += '</div>';
     if(marked !== null){
-      html += `<div class="feedback ${marked ? 'ok' : 'ng'}" style="margin-top:10px;">${marked ? '○ 覚えた' : '△ あとでもう一度'}（自己評価）</div>`;
+      html += `<div class="feedback ${marked ? 'ok' : 'later'}" style="margin-top:10px;">${marked ? '○ 覚えた' : '△ あとでもう一度'}（自己評価）</div>`;
     }
     meta.innerHTML = html;
   } else {
@@ -1400,8 +1490,8 @@ function renderWbCard(){
   if(showBack && marked === null){
     rate.style.display = 'block';
     rate.innerHTML = `<div class="nav-row" style="margin-top:10px;">
-        <button class="btn btn-secondary" style="margin-top:0;" onclick="wbMark(true)">○ 覚えた</button>
-        <button class="btn btn-secondary" style="margin-top:0;border-color:var(--danger);color:var(--danger);" onclick="wbMark(false)">△ あとでもう一度</button>
+        <button class="btn btn-secondary" style="margin-top:0;border-color:var(--good);color:var(--good);" onclick="wbMark(true)">○ 覚えた</button>
+        <button class="btn btn-secondary" style="margin-top:0;border-color:var(--muted2);color:var(--muted);" onclick="wbMark(false)">△ あとでもう一度</button>
       </div>`;
   } else if(showBack){
     // 評価済みのカードを見返しているとき
@@ -1451,11 +1541,11 @@ function showWbResult(){
       </div></div>`).join('');
     const addBtn = document.getElementById('wbAddUnsureBtn');
     addBtn.disabled = false;
-    addBtn.textContent = '🔖 まとめてマイカードに登録';
+    addBtn.innerHTML = icS('bookmark', 3) + 'まとめてマイカードに登録';
     addBtn.onclick = () => {
       unsure.forEach(c => addMyTerm(c.term));
       addBtn.disabled = true;
-      addBtn.textContent = `✓ 登録しました（マイカード：${loadMyTerms().length}枚）`;
+      addBtn.innerHTML = `✓ 登録しました（マイカード：${loadMyTerms().length}枚）`;
       renderWordbookHome();
     };
     retry.onclick = () => wbStart(unsure);
@@ -1475,14 +1565,14 @@ function renderMyTermsScreen(){
   document.getElementById('myTermsClearBtn').style.display = cards.length ? 'block' : 'none';
   document.getElementById('myTermsClearConfirmRow').style.display = 'none';
   if(cards.length === 0){
-    listEl.innerHTML = '<div class="stats-empty">まだ登録がありません。演習の解説の下、またはカードのうら面にある「🔖 マイカードに登録」で貯められます。</div>';
+    listEl.innerHTML = '<div class="stats-empty">まだ登録がありません。演習の解説の下、またはカードのうら面にある「マイカードに登録」で貯められます。</div>';
     return;
   }
   listEl.innerHTML = cards.map(c => {
     const st = p[c.term];
     const badge = st === 'known' ? '<span class="wb-badge known">覚えた</span>'
                 : st === 'unsure' ? '<span class="wb-badge unsure">あとで</span>' : '';
-    const kindBadge = `<span class="wb-badge ${c.kind === 'point' ? 'unsure' : 'known'}" style="background:${c.kind === 'point' ? '#F1E3DC' : '#E9E4D6'};color:${c.kind === 'point' ? '#8C4A2F' : '#6B5A24'};">${WB_KIND_LABEL[c.kind]}</span>`;
+    const kindBadge = `<span class="wb-kind ${c.kind}" style="margin-left:6px;">${WB_KIND_LABEL[c.kind]}</span>`;
     return `<div class="wb-row">
       <div>
         <div class="t">${escHtml(c.term)}${kindBadge}${badge}</div>
@@ -1742,7 +1832,7 @@ function explanationHtml(q, order){
   ex = remapExplanationNumbers(ex, order); // 選択肢シャッフル時は画面の並びに番号を合わせる
   const esc = ex.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   // 解説の折りたたみの下に「みんなのメモ」（学生投稿・先生承認制）を付ける
-  return `<details class="expl"><summary>\u{1F4A1} 解説を見る</summary><div class="expl-body">${esc}</div></details>` + notesSectionHtml(q);
+  return `<details class="expl"><summary>${icS('bulb', 5)}解説を見る</summary><div class="expl-body">${esc}</div></details>` + notesSectionHtml(q);
 }
 
 /* ============ みんなのメモ（解説の学生クラウドソーシング） ============ */
@@ -1797,7 +1887,7 @@ function sortNotesForDisplay(list){
 // 送信先のGASのアクション名は reportNote のまま（サーバ側は無変更）。
 function noteReportBtnHtml(noteId){
   if(REPORTED_NOTES.has(noteId)) return '<span class="note-report-done">先生に知らせました</span>';
-  return `<button type="button" class="note-report-btn" data-noteid="${escHtml(noteId)}">⚑ 気になる</button>`;
+  return `<button type="button" class="note-report-btn" data-noteid="${escHtml(noteId)}">${icS('flag', 3)}気になる</button>`;
 }
 
 function noteCardHtml(n){
@@ -1805,7 +1895,7 @@ function noteCardHtml(n){
   return `<div class="note-card">
     <div class="note-badges"><span class="note-lang-badge">${escHtml(n.lang)}</span><span class="note-type-badge">${escHtml(n.type)}</span></div>
     <div class="note-body">${escHtml(n.body)}</div>
-    <div class="note-meta"><span>✍ ${escHtml(n.name)}さん</span><span>${escHtml(dateStr)}</span>${noteReportBtnHtml(n.id)}</div>
+    <div class="note-meta"><span>${icS('pen', 3)}${escHtml(n.name)}さん</span><span>${escHtml(dateStr)}</span>${noteReportBtnHtml(n.id)}</div>
   </div>`;
 }
 
@@ -1820,14 +1910,14 @@ function myNoteCardHtml(m){
   </div>`;
 }
 
-const NOTE_HINT_QUIZ = '✏️ この問題のメモを投稿する（母国語OK）。覚え方・つまずきポイント・母国語での一言など。<br>※「2番が正解」のような<b>選択肢の番号には触れない</b>でね（表示のたびに並び順が変わるため）。先生が確認したうえで公開します（不適切な投稿がないかの確認です）。';
-const NOTE_HINT_TERM = '✏️ このカードのメモを投稿する（母国語OK）。<b>どうやって覚えたか</b>・まちがえやすいところ・母国語での一言など。<br>※先生が確認したうえで公開します（不適切な投稿がないかの確認です）。もとになった問題の解説にも表示されます。';
+const NOTE_HINT_QUIZ = icS('pen', 4) + 'この問題のメモを投稿する（母国語OK）。覚え方・つまずきポイント・母国語での一言など。<br>※「2番が正解」のような<b>選択肢の番号には触れない</b>でね（表示のたびに並び順が変わるため）。先生が確認したうえで公開します（不適切な投稿がないかの確認です）。';
+const NOTE_HINT_TERM = icS('pen', 4) + 'このカードのメモを投稿する（母国語OK）。<b>どうやって覚えたか</b>・まちがえやすいところ・母国語での一言など。<br>※先生が確認したうえで公開します（不適切な投稿がないかの確認です）。もとになった問題の解説にも表示されます。';
 
 // メモは「覚え方」を共有する場所であって、正解の根拠ではない。
 // 先生の検収は「不適切な投稿がないか」の確認であり、内容の正しさの保証ではない——
 // この位置づけを、メモを読む前にはっきり示しておく（2026-08-06方針）。
-const NOTE_DISCLAIMER_QUIZ = '💬 これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。正解と根拠は上の解説を見てください。';
-const NOTE_DISCLAIMER_TERM = '💬 これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。意味や要点はカードのうら面を、くわしい根拠は解説を見てください。';
+const NOTE_DISCLAIMER_QUIZ = icS('speech', 4) + 'これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。正解と根拠は上の解説を見てください。';
+const NOTE_DISCLAIMER_TERM = icS('speech', 4) + 'これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。意味や要点はカードのうら面を、くわしい根拠は解説を見てください。';
 
 function noteFormHtml(qid, hintHtml){
   const pref = getPreferredNoteLang();
@@ -1858,7 +1948,7 @@ function notesSectionHtml(q){
   const mineHtml = mine.length
     ? `<div class="note-mine-label">あなたの投稿</div><div class="note-mine">${mine.map(myNoteCardHtml).join('')}</div>`
     : '<div class="note-mine"></div>';
-  return `<details class="notes-sec"><summary>\u{1F30F} みんなのメモ（${approved.length}件）・投稿する</summary>
+  return `<details class="notes-sec"><summary>${icS('globe', 5)}みんなのメモ（${approved.length}件）・投稿する</summary>
     <div class="notes-body"><div class="note-disclaimer">${NOTE_DISCLAIMER_QUIZ}</div>${listHtml}${mineHtml}${noteFormHtml(q.id, NOTE_HINT_QUIZ)}</div>
   </details>`;
 }
@@ -1887,7 +1977,7 @@ function termNotesSectionHtml(card){
   const mineHtml = mine.length
     ? `<div class="note-mine-label">あなたの投稿</div><div class="note-mine">${mine.map(myNoteCardHtml).join('')}</div>`
     : '<div class="note-mine"></div>';
-  return `<details class="notes-sec"><summary>\u{1F30F} みんなのメモ（${sorted.length}件）・投稿する</summary>
+  return `<details class="notes-sec"><summary>${icS('globe', 5)}みんなのメモ（${sorted.length}件）・投稿する</summary>
     <div class="notes-body"><div class="note-disclaimer">${NOTE_DISCLAIMER_TERM}</div>${listHtml}${mineHtml}${noteFormHtml(card.qids[0], NOTE_HINT_TERM)}</div>
   </details>`;
 }
@@ -1930,9 +2020,9 @@ async function handleNoteSubmit(btn){
     const sec = form.closest('.notes-sec');
     const mineArea = sec ? sec.querySelector('.note-mine') : null;
     if(mineArea) mineArea.insertAdjacentHTML('afterbegin', myNoteCardHtml(mineEntry));
-    form.innerHTML = '<div class="note-thanks">✅ ありがとう！先生の確認後にみんなへ公開されます。</div>';
+    form.innerHTML = '<div class="note-thanks">' + icS('check', 4) + 'ありがとう！先生の確認後にみんなへ公開されます。</div>';
   }catch(e2){
-    msg.textContent = '⚠️ ' + (e2.message || '送信に失敗しました。通信環境を確認してもう一度試してね。');
+    msg.innerHTML = icS('warn', 4) + escHtml(e2.message || '送信に失敗しました。通信環境を確認してもう一度試してね。');
     btn.disabled = false;
     btn.textContent = '送信する';
   }
@@ -1984,7 +2074,7 @@ document.addEventListener('click', e => {
   const no = e.target.closest('.note-report-no');
   if(no){
     const id = no.dataset.noteid;
-    no.closest('.note-report-confirm').outerHTML = `<button type="button" class="note-report-btn" data-noteid="${escHtml(id)}">⚑ 気になる</button>`;
+    no.closest('.note-report-confirm').outerHTML = `<button type="button" class="note-report-btn" data-noteid="${escHtml(id)}">${icS('flag', 3)}気になる</button>`;
     return;
   }
 });
@@ -2146,7 +2236,7 @@ async function showResult(){
     const bulkBtn = document.getElementById('bulkAddWrongBtn');
     bulkBtn.style.display = 'block';
     bulkBtn.disabled = false;
-    bulkBtn.textContent = '🔖 間違えた問題のカードをまとめてマイカードに登録';
+    bulkBtn.innerHTML = ic('bookmark') + '間違えた問題のカードをまとめてマイカードに登録';
     bulkBtn.onclick = () => {
       let added = 0;
       wrong.forEach(r => {
@@ -2156,7 +2246,7 @@ async function showResult(){
       renderWrongList();
       renderWordbookHome();
       bulkBtn.disabled = true;
-      bulkBtn.textContent = added
+      bulkBtn.innerHTML = added
         ? `✓ ${added}枚を登録しました（マイカード：${loadMyTerms().length}枚）`
         : `すでに全部登録済みです（マイカード：${loadMyTerms().length}枚）`;
     };
@@ -2407,7 +2497,7 @@ async function renderStatsScreen(){
   const { history, offline } = await loadHistory();
 
   if(offline){
-    overviewEl.innerHTML = '⚠️ サーバーに接続できませんでした。通信環境をご確認のうえ、もう一度お試しください。';
+    overviewEl.innerHTML = icS('warn', 4) + 'サーバーに接続できませんでした。通信環境をご確認のうえ、もう一度お試しください。';
     trendEl.innerHTML = '<div class="stats-empty">記録を取得できませんでした</div>';
     subjEl.innerHTML = '<div class="stats-empty">記録を取得できませんでした</div>';
     weakEl.innerHTML = '<div class="stats-empty">記録を取得できませんでした</div>';
