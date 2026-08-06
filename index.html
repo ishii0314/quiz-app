@@ -358,6 +358,10 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 .note-report-yes{color:var(--danger);font-weight:700;}
 .note-report-done{font-size:10.5px;color:var(--muted2);}
 .note-empty{font-size:12px;color:var(--muted);padding:4px 0 8px;}
+.note-disclaimer{
+  font-size:11.5px;line-height:1.75;color:#6E6A5E;background:#F4F1E8;
+  border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-bottom:9px;
+}
 .note-form{border-top:1px dashed var(--line);padding-top:10px;margin-top:4px;}
 .note-hint{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:7px;}
 .note-form-row{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
@@ -1722,9 +1726,11 @@ function sortNotesForDisplay(list){
   return list.slice().sort((a,b) => rank(a) - rank(b) || String(b.date).localeCompare(String(a.date)));
 }
 
+// 「通報」ではなく「気になる」。不適切な投稿だけでなく、内容の間違いも知らせてもらう。
+// 送信先のGASのアクション名は reportNote のまま（サーバ側は無変更）。
 function noteReportBtnHtml(noteId){
-  if(REPORTED_NOTES.has(noteId)) return '<span class="note-report-done">通報済み</span>';
-  return `<button type="button" class="note-report-btn" data-noteid="${escHtml(noteId)}">⚑ 通報</button>`;
+  if(REPORTED_NOTES.has(noteId)) return '<span class="note-report-done">先生に知らせました</span>';
+  return `<button type="button" class="note-report-btn" data-noteid="${escHtml(noteId)}">⚑ 気になる</button>`;
 }
 
 function noteCardHtml(n){
@@ -1747,8 +1753,14 @@ function myNoteCardHtml(m){
   </div>`;
 }
 
-const NOTE_HINT_QUIZ = '✏️ この問題のメモを投稿する（母国語OK）。覚え方・つまずきポイント・母国語での一言など。<br>※「2番が正解」のような<b>選択肢の番号には触れない</b>でね（表示のたびに並び順が変わるため）。先生の確認後にみんなへ公開されます。';
-const NOTE_HINT_TERM = '✏️ この用語のメモを投稿する（母国語OK）。<b>どうやって覚えたか</b>・まちがえやすいところ・母国語での一言など。<br>※先生の確認後にみんなへ公開されます。同じ用語が出てくる問題の解説にも表示されます。';
+const NOTE_HINT_QUIZ = '✏️ この問題のメモを投稿する（母国語OK）。覚え方・つまずきポイント・母国語での一言など。<br>※「2番が正解」のような<b>選択肢の番号には触れない</b>でね（表示のたびに並び順が変わるため）。先生が確認したうえで公開します（不適切な投稿がないかの確認です）。';
+const NOTE_HINT_TERM = '✏️ この用語のメモを投稿する（母国語OK）。<b>どうやって覚えたか</b>・まちがえやすいところ・母国語での一言など。<br>※先生が確認したうえで公開します（不適切な投稿がないかの確認です）。同じ用語が出てくる問題の解説にも表示されます。';
+
+// メモは「覚え方」を共有する場所であって、正解の根拠ではない。
+// 先生の検収は「不適切な投稿がないか」の確認であり、内容の正しさの保証ではない——
+// この位置づけを、メモを読む前にはっきり示しておく（2026-08-06方針）。
+const NOTE_DISCLAIMER_QUIZ = '💬 これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。正解と根拠は上の解説を見てください。';
+const NOTE_DISCLAIMER_TERM = '💬 これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。用語の意味はカードのうら面を、くわしい根拠は解説を見てください。';
 
 function noteFormHtml(qid, hintHtml){
   const pref = getPreferredNoteLang();
@@ -1780,7 +1792,7 @@ function notesSectionHtml(q){
     ? `<div class="note-mine-label">あなたの投稿</div><div class="note-mine">${mine.map(myNoteCardHtml).join('')}</div>`
     : '<div class="note-mine"></div>';
   return `<details class="notes-sec"><summary>\u{1F30F} みんなのメモ（${approved.length}件）・投稿する</summary>
-    <div class="notes-body">${listHtml}${mineHtml}${noteFormHtml(q.id, NOTE_HINT_QUIZ)}</div>
+    <div class="notes-body"><div class="note-disclaimer">${NOTE_DISCLAIMER_QUIZ}</div>${listHtml}${mineHtml}${noteFormHtml(q.id, NOTE_HINT_QUIZ)}</div>
   </details>`;
 }
 
@@ -1809,7 +1821,7 @@ function termNotesSectionHtml(card){
     ? `<div class="note-mine-label">あなたの投稿</div><div class="note-mine">${mine.map(myNoteCardHtml).join('')}</div>`
     : '<div class="note-mine"></div>';
   return `<details class="notes-sec"><summary>\u{1F30F} みんなのメモ（${sorted.length}件）・投稿する</summary>
-    <div class="notes-body">${listHtml}${mineHtml}${noteFormHtml(card.qids[0], NOTE_HINT_TERM)}</div>
+    <div class="notes-body"><div class="note-disclaimer">${NOTE_DISCLAIMER_TERM}</div>${listHtml}${mineHtml}${noteFormHtml(card.qids[0], NOTE_HINT_TERM)}</div>
   </details>`;
 }
 
@@ -1868,9 +1880,9 @@ async function handleNoteReport(noteId, el){
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || '');
     REPORTED_NOTES.add(noteId);
-    el.outerHTML = '<span class="note-report-done">通報しました。先生が確認します</span>';
+    el.outerHTML = '<span class="note-report-done">先生に知らせました。ありがとう！</span>';
   }catch(e){
-    el.outerHTML = '<span class="note-report-done">通報できませんでした</span>';
+    el.outerHTML = '<span class="note-report-done">送信できませんでした</span>';
   }
 }
 
@@ -1897,7 +1909,7 @@ document.addEventListener('click', e => {
   const rep = e.target.closest('.note-report-btn');
   if(rep){
     const id = rep.dataset.noteid;
-    rep.outerHTML = `<span class="note-report-confirm"><span class="note-report-done">この投稿を通報する？</span> <button type="button" class="note-report-yes" data-noteid="${escHtml(id)}">はい</button>　<button type="button" class="note-report-no" data-noteid="${escHtml(id)}">いいえ</button></span>`;
+    rep.outerHTML = `<span class="note-report-confirm"><span class="note-report-done">このメモを先生に知らせる？（内容が間違っている・ふさわしくない）</span> <button type="button" class="note-report-yes" data-noteid="${escHtml(id)}">知らせる</button>　<button type="button" class="note-report-no" data-noteid="${escHtml(id)}">やめる</button></span>`;
     return;
   }
   const yes = e.target.closest('.note-report-yes');
@@ -1905,7 +1917,7 @@ document.addEventListener('click', e => {
   const no = e.target.closest('.note-report-no');
   if(no){
     const id = no.dataset.noteid;
-    no.closest('.note-report-confirm').outerHTML = `<button type="button" class="note-report-btn" data-noteid="${escHtml(id)}">⚑ 通報</button>`;
+    no.closest('.note-report-confirm').outerHTML = `<button type="button" class="note-report-btn" data-noteid="${escHtml(id)}">⚑ 気になる</button>`;
     return;
   }
 });
