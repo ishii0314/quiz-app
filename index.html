@@ -8,19 +8,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#F0EEE6;      /* Claude風アイボリー背景 */
-  --ink:#1F1E1D;        /* 温かみのある墨色 */
-  --teal:#C6613F;       /* メインアクセント：テラコッタ */
-  --teal-deep:#3D3929;  /* 濃色：ウォームダークスレート */
-  --clay:#D97757;       /* 明るいテラコッタ（バッジ） */
-  --gold:#A98A47;       /* 落ち着いたゴールド */
-  --line:#E2DCCE;       /* 温かみのある罫線 */
+  /* ---- イメージカラー（2026-08-06改訂） --------------------------------
+     藍（濃紺）を主役に、ドジャーブルーを差し色、コーラルを副色にした構成。
+     ・藍とコーラルは**アプリアイコン（藍×コーラルのシェブロン2枚）と揃えている**
+     ・ドジャーブルー #005A9C はロサンゼルス・ドジャースの公式カラー
+     ・背景は生成りアイボリーのまま（長時間見る画面なので目に優しい側を優先）
+     色を変えるときはこのブロックだけ直せばよい（全画面がこの変数を参照している）。 */
+  --paper:#F0EEE6;      /* 生成りアイボリー背景 */
+  --ink:#1B1F26;        /* 少し青みを足した墨色 */
+  --teal:#123A63;       /* メインアクセント：藍（アイコンの藍） */
+  --teal-deep:#0B2545;  /* 濃色：ネイビー */
+  --clay:#D97757;       /* 副色：コーラル（アイコンのコーラル・バッジ） */
+  --gold:#005A9C;       /* 差し色：ドジャーブルー（タブ・カード帳まわり） */
+  --line:#E0DED4;       /* 罫線 */
   --card:#FAF9F5;       /* カード背景（生成り白） */
-  --danger:#B5483D;
-  --good:#5E7C4E;
-  --muted:#6E6A5E;
-  --muted2:#94907F;
-  --soft:#E9E4D6;       /* バー背景などのソフト面 */
+  --danger:#C8434A;
+  --good:#4C7A57;
+  --muted:#676970;
+  --muted2:#94969F;
+  --soft:#E6E4DA;       /* バー背景などのソフト面 */
 }
 *{box-sizing:border-box;}
 body{
@@ -427,16 +433,16 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 
     <div class="chart-card" id="goalCard" style="border-left-color:var(--gold);">
       <div class="tab-label" style="background:var(--gold);">今日の目標</div>
-      <h3>🎯 今日の<span id="goalTitleNum">10</span>問　<span id="goalDoneBadge" style="display:none;font-size:12px;color:var(--good);font-family:'Noto Sans JP',sans-serif;font-weight:700;">✓ 達成！</span></h3>
+      <h3>🎯 今日の<span id="goalTitleNum">17</span>問　<span id="goalDoneBadge" style="display:none;font-size:12px;color:var(--good);font-family:'Noto Sans JP',sans-serif;font-weight:700;">✓ 達成！</span></h3>
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin:10px 0 6px;">
-        <div style="font-size:13px;color:var(--muted);">今日 <span id="goalToday" style="font-family:'Noto Serif JP',serif;font-size:22px;color:var(--teal);font-weight:700;">0</span> / <span id="goalTargetLabel">5問</span></div>
+        <div style="font-size:13px;color:var(--muted);">今日 <span id="goalToday" style="font-family:'Noto Serif JP',serif;font-size:22px;color:var(--teal);font-weight:700;">0</span> / <span id="goalTargetLabel">17問</span></div>
         <div style="font-size:13px;color:var(--muted);">🔥 連続 <span id="goalStreak" style="font-weight:700;color:var(--danger);">0</span>日</div>
       </div>
       <div class="progress-bar" style="margin-bottom:14px;"><div class="progress-fill" id="goalProgressFill" style="width:0%;"></div></div>
       <button class="btn btn-primary" id="quickStartBtn">⚡ 今日の分に挑戦する</button>
       <div class="count-row" style="margin-top:14px;">
-        <input type="range" id="goalRange" min="5" max="30" step="5" value="5">
-        <div class="count-num" id="goalRangeNum">5問</div>
+        <input type="range" id="goalRange" min="5" max="30" step="1" value="17">
+        <div class="count-num" id="goalRangeNum">17問</div>
       </div>
       <div class="hint" id="quickScopeNote"></div>
     </div>
@@ -2491,12 +2497,13 @@ document.getElementById('resetConfirmNo').onclick = () => {
 
 /* ============ 今日の目標（デイリーゴール・連続日数） ============ */
 const DAILY_GOAL_KEY = 'quizAppDailyGoal_v1';
+const DAILY_GOAL_DEFAULT = 17;   // 初期値。すでに自分で設定した端末はその値のまま。
 
 function getDailyGoal(){
   try{
     const v = Number(localStorage.getItem(DAILY_GOAL_KEY));
-    return (v && v > 0) ? v : 5;
-  }catch(e){ return 5; }
+    return (v && v > 0) ? v : DAILY_GOAL_DEFAULT;
+  }catch(e){ return DAILY_GOAL_DEFAULT; }
 }
 function setDailyGoal(n){
   try{ localStorage.setItem(DAILY_GOAL_KEY, String(n)); }catch(e){}
