@@ -1965,10 +1965,17 @@ function setPreferredNoteLang(lang){
 
 // 承認済みメモを起動時に全問分まとめて取得（1問ごとに通信しない）。失敗してもアプリ本体は止めない
 async function loadNotes(){
+  // 起動時に問題データと並行して呼ばれる。GASが重いときにここで固まると
+  // 「読み込んでいます…」が終わらないので、8秒で打ち切る（メモが無くても演習はできる）
+  let ctl = null, timer = null;
+  if(typeof AbortController !== 'undefined'){
+    ctl = new AbortController();
+    timer = setTimeout(() => ctl.abort(), 8000);
+  }
   try{
     const sid = getStudentId();
     const url = `${GAS_API_URL}?type=notes${sid ? '&studentId=' + encodeURIComponent(sid) : ''}`;
-    const res = await fetch(url);
+    const res = await fetch(url, ctl ? { signal: ctl.signal } : undefined);
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'unknown error');
     NOTES_BY_QID = new Map();
@@ -1980,6 +1987,8 @@ async function loadNotes(){
     NOTES_LOADED = true;
   }catch(e){
     NOTES_LOADED = false; // メモが読めなくても演習はできる
+  }finally{
+    if(timer) clearTimeout(timer);
   }
 }
 
