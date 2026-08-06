@@ -24,7 +24,9 @@
   --teal-deep:#1F304A;  /* 濃色：ネイビー（アプリアイコンから抽出した実物の色） */
   --clay:#E86A50;       /* 副色：コーラル（同上。バッジ・科目タブ） */
   --gold:#B98A2E;       /* 差し色：ゴールド（今日の目標・暗記カードのタブ） */
-  --line:#DCE3EB;       /* 罫線 */
+  --line:#C6D2E1;       /* 罫線：藍を薄めた色。白い面の輪郭をはっきりさせるためのもの。
+                           藍 #1F304A と同じ色相で、白地とのコントラストは約1.5
+                           （罫線は「見える」だけでよく、これ以上濃くすると枠が主役になる） */
   --card:#FFFFFF;       /* カード背景 */
   --danger:#D1373D;
   --good:#2F7A5B;
@@ -47,7 +49,7 @@
      ★ .acc の中でも上書きされないよう、--teal ではなく専用の変数を使うこと。 */
   --memo:#1F304A;         /* みんなのメモの文字色（中立の藍） */
   --memo-soft:#F2F5FA;
-  --memo-line:#C9D3E0;
+  --memo-line:#C6D2E1;   /* --line と同じ。メモだけ線が浮かないように */
   /* みんなのメモは演習にも暗記カードにも出る「両方の機能」なので、
      見出しの上に青とコーラルの二本線を通して、両方を帯びていることを示す */
   --memo-bar:linear-gradient(90deg, #005A9C 0 50%, #C9502C 50% 100%);
@@ -470,8 +472,15 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 <body>
 <div id="loadingOverlay" style="position:fixed;inset:0;background:var(--paper);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;">
   <div id="loadingMessage" style="font-size:14px;color:var(--muted);">問題データを読み込んでいます…</div>
-  <div id="loadingErrorBox" style="display:none;font-size:13px;color:var(--danger);line-height:1.6;">
-    問題データの取得に失敗しました。通信環境をご確認のうえ、ページを再読み込みしてください。
+  <div id="loadingErrorBox" style="display:none;font-size:13px;line-height:1.7;max-width:320px;">
+    <div style="color:var(--danger);font-weight:700;margin-bottom:6px;">問題データを読み込めませんでした</div>
+    <div style="color:var(--muted);">
+      いちどに大勢が開くと、しばらくつながらないことがあります。<br>
+      <b>少し待ってから、もう一度お試しください。</b>電波の入りもご確認ください。
+    </div>
+    <button id="loadRetryBtn" style="margin-top:14px;background:var(--teal);color:#fff;border:none;border-radius:var(--r-pill);padding:10px 26px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;">
+      もう一度読み込む
+    </button>
   </div>
 </div>
 <!-- ============ アイコン ============
@@ -904,21 +913,107 @@ document.getElementById('studentIdChangeBtn').onclick = () => {
 };
 
 let ALL_Q = [];
+let Q_FROM_STALE_CACHE = false;   // 通信に失敗して端末の控えで動いているとき true
 
-async function loadQuestionBank(){
-  const loadingEl = document.getElementById('questionLoadError');
+/* ---- 問題データの控え（端末内） --------------------------------------------
+   なぜ持たせるか：
+   ・毎回GASに1,174問（約1.6MB）を取りに行っていた。授業の開始時に30人が
+     いっせいに開くと、Apps Scriptの同時実行の上限に当たって数人が失敗する。
+   ・控えがあれば、2回目以降に開くときはGASを待たずに出せる（＝失敗しようがない）。
+   ・鮮度は裏で取り直して保つので、スプレッドシートを直した翌回には反映される。
+   キーは新設。既存の進捗（quizAppWordbookProgress_v1 など）には一切触らない。   */
+const QCACHE_KEY = 'quizAppQuestionCache_v1';
+const QCACHE_FRESH_MS = 6 * 60 * 60 * 1000;   // 6時間以内の控えは「そのまま使ってよい」とみなす
+
+function readQuestionCache(){
   try{
-    const url = `${GAS_API_URL}?type=questions`;
-    const res = await fetch(url);
+    const o = JSON.parse(localStorage.getItem(QCACHE_KEY) || 'null');
+    if(!o || !Array.isArray(o.questions) || !o.questions.length) return null;
+    return o;   // { savedAt, questions }
+  }catch(e){ return null; }
+}
+function writeQuestionCache(questions){
+  try{
+    localStorage.setItem(QCACHE_KEY, JSON.stringify({ savedAt: Date.now(), questions: questions }));
+  }catch(e){ /* 容量超過などは黙って諦める。控えは無くても動く */ }
+}
+
+function applyQuestions(list){
+  ALL_Q = list;
+  const badgeEl = document.querySelector('header.top .badge');
+  if(badgeEl) badgeEl.textContent = ALL_Q.length + '問';
+}
+
+function setLoadingMessage(text){
+  const el = document.getElementById('loadingMessage');
+  if(el) el.textContent = text;
+}
+
+// 1回ぶんの取得。応答が返らないまま固まらないよう時間で打ち切る
+async function fetchQuestionsOnce(timeoutMs){
+  let ctl = null, timer = null;
+  if(typeof AbortController !== 'undefined'){
+    ctl = new AbortController();
+    timer = setTimeout(() => ctl.abort(), timeoutMs);
+  }
+  try{
+    const res = await fetch(`${GAS_API_URL}?type=questions`, ctl ? { signal: ctl.signal } : undefined);
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'unknown error');
     // 生徒に出すのは「類題」だけ（出典に「類題」を含むもの）。過去問・模試の原題は除外（公開を見据えた方針）
-    ALL_Q = (data.questions || []).filter(q => String(q.source || '').includes('類題'));
-    const badgeEl = document.querySelector('header.top .badge');
-    if(badgeEl) badgeEl.textContent = ALL_Q.length + '問';
+    const list = (data.questions || []).filter(q => String(q.source || '').includes('類題'));
+    if(!list.length) throw new Error('empty');
+    return list;
+  } finally {
+    if(timer) clearTimeout(timer);
+  }
+}
+
+// 間をあけて3回まで試す。混み合いによる失敗はたいてい数秒で解消するため
+async function fetchQuestionsWithRetry(quiet){
+  const WAITS = [0, 1800, 4500];
+  let lastErr = null;
+  for(let i = 0; i < WAITS.length; i++){
+    if(WAITS[i] > 0){
+      if(!quiet) setLoadingMessage('混み合っているようです。もう一度試しています…（' + (i + 1) + '回目）');
+      await new Promise(r => setTimeout(r, WAITS[i]));
+    }
+    try{ return await fetchQuestionsOnce(20000); }
+    catch(e){ lastErr = e; }
+  }
+  throw lastErr || new Error('failed');
+}
+
+async function loadQuestionBank(){
+  const cache = readQuestionCache();
+
+  // ① 新しい控えがあるなら即座に表示して、最新版は裏で取り直す
+  if(cache && (Date.now() - cache.savedAt) < QCACHE_FRESH_MS){
+    applyQuestions(cache.questions);
+    // 取り直しは「30分以上たっていたら」「30〜60秒おいてから」にする。
+    // 授業の開始直後にみんなが開く数十秒のあいだ、GASに触りに行かないようにするため。
+    if((Date.now() - cache.savedAt) > 30 * 60 * 1000){
+      const delay = 30000 + Math.floor(Math.random() * 30000);
+      setTimeout(() => {
+        fetchQuestionsWithRetry(true).then(writeQuestionCache).catch(() => {});
+      }, delay);
+    }
+    return true;
+  }
+
+  // ② 取りに行く（3回まで）
+  try{
+    const list = await fetchQuestionsWithRetry(false);
+    applyQuestions(list);
+    writeQuestionCache(list);
     return true;
   }catch(e){
-    if(loadingEl) loadingEl.style.display = 'block';
+    // ③ 取れなくても、古い控えがあるならそれで始められるようにする
+    if(cache){
+      applyQuestions(cache.questions);
+      Q_FROM_STALE_CACHE = true;
+      return true;
+    }
     return false;
   }
 }
@@ -2806,6 +2901,19 @@ if(rxClearBtnEl){
   };
 }
 
+// 通信に失敗して端末の控えで動いているときに、その旨を静かに知らせる
+function showStaleNotice(){
+  const host = document.querySelector('header.top');
+  if(!host || document.getElementById('staleNotice')) return;
+  const el = document.createElement('div');
+  el.id = 'staleNotice';
+  el.style.cssText = 'background:var(--memo-soft);border-bottom:1px solid var(--line);color:var(--memo);'
+    + 'font-size:12px;line-height:1.6;padding:8px 14px;text-align:center;';
+  el.innerHTML = 'いま通信ができないため、<b>この端末に残っていた問題</b>で表示しています。'
+    + '演習の記録はあとでまとめて送られます。';
+  host.insertAdjacentElement('afterend', el);
+}
+
 async function initApp(){
   // 問題バンクと「みんなのメモ」を並行して読み込む（メモの失敗はアプリを止めない）
   const [ok] = await Promise.all([loadQuestionBank(), loadNotes()]);
@@ -2828,8 +2936,11 @@ async function initApp(){
   if(!ok){
     document.getElementById('loadingMessage').style.display = 'none';
     document.getElementById('loadingErrorBox').style.display = 'block';
+    const retry = document.getElementById('loadRetryBtn');
+    if(retry) retry.onclick = () => location.reload();
     return; // 問題データが無い状態でアプリ本体を操作させない
   }
+  if(Q_FROM_STALE_CACHE) showStaleNotice();
   if(overlay) overlay.style.display = 'none';
 }
 initApp();
