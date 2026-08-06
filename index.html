@@ -280,7 +280,7 @@ details.expl>summary::before{content:"\25B8";margin-right:6px;font-size:11px;}
 details.expl[open]>summary::before{content:"\25BE";}
 details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;color:var(--ink);white-space:pre-wrap;}
 
-/* ---- 単語帳（解説末尾の「用語＝意味」から自動生成） ---- */
+/* ---- 暗記カード（解説末尾の一文から自動生成） ---- */
 .card-add-btn{
   display:inline-flex;align-items:center;gap:4px;margin-top:10px;
   border:1px solid var(--gold);background:#fff;color:#6B5A24;
@@ -500,19 +500,19 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
     <div class="matchcount">条件に一致する問題：<span class="n" id="matchN">0</span> 問</div>
     <button class="btn btn-primary" id="startBtn">演習を始める</button>
 
-    <div class="section-head">単語帳（用語を覚える）</div>
+    <div class="section-head">暗記カード（用語・要点を覚える）</div>
 
     <div class="chart-card" id="wbCard" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">単語帳</div>
-      <h3>📖 単語帳（<span id="wbTotalHead">0</span>語）</h3>
-      <div class="hint" style="margin-top:0;margin-bottom:12px;">解説のいちばん最後の一文（<b>用語＝意味</b>）から自動でつくった単語カードです。表の用語を見て意味を思い出し、めくって自分で「覚えた／あとで」をつけます。<b>問題を解く演習とは別の機能</b>です。</div>
-      <div class="wb-count">覚えた <b id="wbKnownCount">0</b> 語　マイ単語帳 <b id="wbMyCount">0</b> 語<span id="wbTotal" style="display:none;">0</span></div>
-      <div style="font-size:11.5px;color:var(--muted2);margin:-4px 0 10px;">内訳：用語 <b id="wbTermCount">0</b> ／ ポイント（場面と対応の要点） <b id="wbPointCount">0</b></div>
+      <div class="tab-label" style="background:var(--gold);">暗記カード</div>
+      <h3>📖 暗記カード（<span id="wbTotalHead">0</span>枚）</h3>
+      <div class="hint" style="margin-top:0;margin-bottom:12px;">解説のいちばん最後の一文から自動でつくったカードです。おもてを見て思い出し、めくって自分で「覚えた／あとで」をつけます。<b>問題を解く演習とは別の機能</b>です。</div>
+      <div class="wb-count">覚えた <b id="wbKnownCount">0</b> 枚　マイカード <b id="wbMyCount">0</b> 枚<span id="wbTotal" style="display:none;">0</span></div>
+      <div style="font-size:11.5px;color:var(--muted2);margin:-4px 0 10px;">内訳：<b id="wbTermCount">0</b> 枚が用語（フレイル＝…）／ <b id="wbPointCount">0</b> 枚がポイント（場面と対応の要点）</div>
       <div class="progress-bar" style="margin-bottom:14px;"><div class="progress-fill" id="wbHomeFill" style="width:0%;"></div></div>
-      <button class="btn btn-primary" id="wbStartHomeBtn">📖 単語帳を開く</button>
+      <button class="btn btn-primary" id="wbStartHomeBtn">📖 暗記カードを開く</button>
       <div class="nav-row" style="margin-top:10px;">
-        <button class="btn btn-secondary" id="wbQuickUnknownBtn" style="margin-top:0;">まだの語だけ</button>
-        <button class="btn btn-ghost" id="wbMyListBtn" style="margin-top:0;">🔖 マイ単語帳</button>
+        <button class="btn btn-secondary" id="wbQuickUnknownBtn" style="margin-top:0;">まだのカードだけ</button>
+        <button class="btn btn-ghost" id="wbMyListBtn" style="margin-top:0;">🔖 マイカード</button>
       </div>
     </div>
 
@@ -625,27 +625,27 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <div class="tab-label">復習</div>
       <h3>間違えた問題</h3>
       <div class="wrong-list" id="wrongList"></div>
-      <button class="btn btn-ghost" id="bulkAddWrongBtn" style="display:none;">🔖 間違えた問題の用語をまとめてマイ単語帳に登録</button>
+      <button class="btn btn-ghost" id="bulkAddWrongBtn" style="display:none;">🔖 間違えた問題のカードをまとめてマイカードに登録</button>
     </div>
 
     <button class="btn btn-primary" id="retryWrongBtn" style="display:none;">間違えた問題だけ再演習</button>
     <button class="btn btn-secondary" id="backToSetupBtn">条件を変えてもう一度</button>
   </section>
 
-  <!-- ============ 単語帳：範囲を選ぶ ============ -->
+  <!-- ============ 暗記カード：範囲を選ぶ ============ -->
   <section class="screen" id="screen-wbsetup">
     <button id="homeFromWbSetupBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
 
     <div class="chart-card" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">単語帳</div>
+      <div class="tab-label" style="background:var(--gold);">暗記カード</div>
       <h3>覚える範囲を選ぶ</h3>
-      <div class="hint" style="margin-top:0;margin-bottom:12px;">単語カードは、各問題の解説の最後の一文「<b>用語＝意味</b>」から自動で作られています。同じ用語は1枚にまとめてあります。</div>
+      <div class="hint" style="margin-top:0;margin-bottom:12px;">カードは、各問題の解説の最後の一文から自動で作られています。おもてが「用語」のものと「場面・テーマ」のものがあり、同じ見出しは1枚にまとめてあります。</div>
       <div class="diff-row" id="wbScopeChips">
         <div class="diff-chip on" data-scope="all">すべて</div>
-        <div class="diff-chip" data-scope="unknown">まだの語だけ</div>
-        <div class="diff-chip" data-scope="my">マイ単語帳</div>
+        <div class="diff-chip" data-scope="unknown">まだのカード</div>
+        <div class="diff-chip" data-scope="my">マイカード</div>
       </div>
-      <div class="hint" id="wbScopeHint">収録されているすべての用語から出します。</div>
+      <div class="hint" id="wbScopeHint">収録されているすべてのカードから出します。</div>
 
       <div style="margin-top:16px;font-size:12.5px;color:var(--muted);font-weight:700;">カードの種類</div>
       <div class="diff-row" id="wbKindChips" style="margin-top:6px;">
@@ -665,25 +665,25 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 
     <div class="chart-card">
       <div class="tab-label">枚数</div>
-      <h3>1回でめくる枚数</h3>
+      <h3>1回にめくる枚数</h3>
       <div class="count-row">
         <input type="range" id="wbCountRange" min="10" max="60" step="10" value="20">
-        <div class="count-num" id="wbCountNum">20語</div>
+        <div class="count-num" id="wbCountNum">20枚</div>
       </div>
-      <div class="hint">いちばん右まで動かすと、範囲内の全部の語をめくります。</div>
+      <div class="hint">いちばん右まで動かすと、この条件のカードを全部めくります。</div>
     </div>
 
-    <div class="matchcount">この範囲の用語：<span class="n" id="wbMatchN">0</span> 語</div>
+    <div class="matchcount">この条件のカード：<span class="n" id="wbMatchN">0</span> 枚</div>
     <button class="btn btn-primary" id="wbStartBtn">📖 めくり始める</button>
   </section>
 
-  <!-- ============ 単語帳：めくり画面 ============ -->
+  <!-- ============ 暗記カード：めくり画面 ============ -->
   <section class="screen" id="screen-wb">
     <div class="quiz-head">
       <button id="homeFromWbBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
       <div class="progress-text" id="wbLiveScore">覚えた 0</div>
     </div>
-    <div class="progress-text" id="wbProgressText" style="margin-bottom:8px;">1 / 20 語</div>
+    <div class="progress-text" id="wbProgressText" style="margin-bottom:8px;">1 / 20 枚</div>
     <div class="progress-bar"><div class="progress-fill" id="wbSessionFill" style="width:0%"></div></div>
 
     <div class="q-card">
@@ -697,17 +697,17 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <div id="wbMetaArea"></div>
 
       <div class="nav-row">
-        <button class="btn btn-secondary" id="wbBackBtn" style="margin-top:0;display:none;">← 前の語へ</button>
+        <button class="btn btn-secondary" id="wbBackBtn" style="margin-top:0;display:none;">← 前のカードへ</button>
         <button class="btn btn-primary" id="wbFlipBtn">めくる（意味を見る）</button>
       </div>
       <div id="wbRateRow" style="display:none;"></div>
     </div>
   </section>
 
-  <!-- ============ 単語帳：結果 ============ -->
+  <!-- ============ 暗記カード：結果 ============ -->
   <section class="screen" id="screen-wbresult">
     <div class="chart-card" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">単語帳の結果</div>
+      <div class="tab-label" style="background:var(--gold);">暗記カードの結果</div>
       <div class="result-hero">
         <div class="score" id="wbResScore">0 / 0</div>
         <div class="label">覚えた <span id="wbResPct">0%</span></div>
@@ -717,35 +717,35 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 
     <div class="chart-card" id="wbUnsureCard" style="display:none;border-left-color:var(--danger);">
       <div class="tab-label" style="background:var(--danger);">あとでもう一度</div>
-      <h3>△ をつけた用語</h3>
+      <h3>△ をつけたカード</h3>
       <div id="wbUnsureList" style="margin-top:8px;"></div>
-      <button class="btn btn-ghost" id="wbAddUnsureBtn" style="margin-top:12px;">🔖 まとめてマイ単語帳に登録</button>
+      <button class="btn btn-ghost" id="wbAddUnsureBtn" style="margin-top:12px;">🔖 まとめてマイカードに登録</button>
     </div>
 
-    <button class="btn btn-primary" id="wbRetryUnsureBtn" style="display:none;">△ の語だけもう一度めくる</button>
+    <button class="btn btn-primary" id="wbRetryUnsureBtn" style="display:none;">△ のカードだけもう一度めくる</button>
     <button class="btn btn-secondary" id="wbAgainBtn">範囲を変えてもう一度</button>
     <button class="btn btn-ghost" id="wbHomeFromResultBtn">🏠 ホームに戻る</button>
   </section>
 
-  <!-- ============ マイ単語帳画面 ============ -->
+  <!-- ============ マイカード画面 ============ -->
   <section class="screen" id="screen-myterms">
     <button id="homeFromMyTermsBtn" style="background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:700;padding:0;margin-bottom:14px;cursor:pointer;text-decoration:underline;">🏠 ホームに戻る</button>
     <div class="chart-card" style="border-left-color:var(--gold);">
-      <div class="tab-label" style="background:var(--gold);">マイ単語帳</div>
-      <h3>マイ単語帳（<span id="myTermsCount">0語</span>）</h3>
-      <div class="hint">演習の解答後や単語帳の裏面に出る「🔖 マイ単語帳に登録」で貯めた用語です。覚えた用語は「× はずす」で整理しましょう。</div>
+      <div class="tab-label" style="background:var(--gold);">マイカード</div>
+      <h3>マイカード（<span id="myTermsCount">0枚</span>）</h3>
+      <div class="hint">演習の解答後やカードのうら面に出る「🔖 マイカードに登録」で貯めたカードです。覚えたものは「× はずす」で整理しましょう。</div>
       <div id="myTermsList" style="margin-top:12px;"></div>
     </div>
-    <button class="btn btn-primary" id="myTermsStudyBtn">📖 マイ単語帳をめくる</button>
-    <button class="btn btn-ghost" id="myTermsClearBtn" style="color:var(--danger);border-color:var(--danger);">マイ単語帳を空にする</button>
+    <button class="btn btn-primary" id="myTermsStudyBtn">📖 マイカードをめくる</button>
+    <button class="btn btn-ghost" id="myTermsClearBtn" style="color:var(--danger);border-color:var(--danger);">マイカードを空にする</button>
     <div id="myTermsClearConfirmRow" style="display:none;align-items:center;gap:8px;font-size:12px;margin-top:8px;justify-content:center;">
-      <span style="color:#8E3A28;">マイ単語帳を空にしますか？元に戻せません。</span>
+      <span style="color:#8E3A28;">マイカードを空にしますか？元に戻せません。</span>
       <button id="myTermsClearYes" style="background:var(--danger);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">空にする</button>
       <button id="myTermsClearNo" style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:11.5px;cursor:pointer;">やめる</button>
     </div>
   </section>
 
-  <footer class="tip">介護福祉士国試模擬・共通問題バンクより自動出題　|　演習履歴は記録名ごとに保存されます　|　単語帳の進み具合はこの端末の中だけに保存されます</footer>
+  <footer class="tip">介護福祉士国試模擬・共通問題バンクより自動出題　|　演習履歴は記録名ごとに保存されます　|　暗記カードの進み具合はこの端末の中だけに保存されます</footer>
 </div>
 
 <script>
@@ -820,7 +820,7 @@ let state = {
   prescription: false, // カルテQR(?name=&kw=)で開いたときtrue。「今日の分」も絞り込みを尊重する
   keyword: '',
   choiceStyle: 'choices', // 'choices' | 'free'
-  answerMode: 'choices',  // 実際に使うモード（単語帳は演習と別機能なのでここには入らない）
+  answerMode: 'choices',  // 実際に使うモード（暗記カードは演習と別機能なのでここには入らない）
   showChoices: true,
   shuffle: true,
   count: 10,
@@ -1035,7 +1035,7 @@ function escHtml(s){
 }
 
 /* ============================================================
-   単語帳（解説末尾の「用語＝意味」から自動生成）
+   暗記カード（解説末尾の一文から自動生成）
    ------------------------------------------------------------
    解説は「正答はN。…／✗N …／（最終行）用語＝意味。」という書式で
    統一されている。この最終行だけを取り出し、「＝」の前後で割って
@@ -1063,7 +1063,7 @@ const WB_MIN_DEF_LEN = 4;   // これより短い「意味」はカードにし�
 function termFromQuestion(q){
   const line = explanationSummary(q);
   if(!line) return null;
-  if(line.indexOf('要確認') >= 0) return null;      // 校閲メモが解説に残っている問題は単語帳に載せない
+  if(line.indexOf('要確認') >= 0) return null;      // 校閲メモが解説に残っている問題はカードにしない
   const norm = line.replace(/=/g, '＝');
   const pos = norm.indexOf('＝');
   if(pos < 1) return null;                          // 「用語＝意味」の形になっていない
@@ -1164,7 +1164,7 @@ function wbKnownCount(){
   return TERM_CARDS.filter(c => p[c.term] === 'known').length;
 }
 
-/* ---- マイ単語帳 ---- */
+/* ---- マイカード ---- */
 function loadMyTerms(){
   try{
     const raw = localStorage.getItem(WB_MYLIST_KEY);
@@ -1209,9 +1209,9 @@ function migrateOldCardDeck(){
   }catch(e){}
 }
 
-/* ---- 演習の解説の下に出す「マイ単語帳に登録」ボタン ---- */
+/* ---- 演習の解説の下に出す「マイカードに登録」ボタン ---- */
 function myTermBtnLabel(term, added){
-  return added ? `✓「${term}」を登録済み（タップで解除）` : `🔖「${term}」をマイ単語帳に登録`;
+  return added ? `✓「${term}」を登録済み（タップで解除）` : `🔖「${term}」をマイカードに登録`;
 }
 function termBtnHtml(q){
   const c = termCardOf(q);
@@ -1227,7 +1227,7 @@ function toggleTermBtn(btn){
   renderWordbookHome();
 }
 
-/* ---- ホームの単語帳カード ---- */
+/* ---- ホームの暗記カードのカード ---- */
 function renderWordbookHome(){
   const totalEl = document.getElementById('wbTotal');
   if(!totalEl) return;
@@ -1249,7 +1249,7 @@ function renderWordbookHome(){
   document.getElementById('wbMyListBtn').disabled = (mine === 0);
 }
 
-/* ---- 単語帳セッション ---- */
+/* ---- 暗記カードのセッション ---- */
 let wb = {
   subjects: new Set(),
   scope: 'all',          // 'all' | 'unknown' | 'my'
@@ -1312,7 +1312,7 @@ function updateWbMatchCount(){
   if(range && num){
     const atMax = Number(range.value) >= Number(range.max);
     wb.count = atMax ? 999 : Number(range.value);
-    num.textContent = atMax ? 'すべて' : (range.value + '語');
+    num.textContent = atMax ? 'すべて' : (range.value + '枚');
   }
   document.getElementById('wbStartBtn').disabled = (n === 0);
 }
@@ -1334,7 +1334,7 @@ function renderWbCard(){
   const marked = wb.marks[wb.idx];
   const total = wb.cards.length;
 
-  document.getElementById('wbProgressText').textContent = `${wb.idx + 1} / ${total} 語`;
+  document.getElementById('wbProgressText').textContent = `${wb.idx + 1} / ${total} 枚`;
   document.getElementById('wbLiveScore').textContent = `覚えた ${wb.marks.filter(m => m === true).length}`;
   document.getElementById('wbSessionFill').style.width = `${(wb.idx / total) * 100}%`;
   document.getElementById('wbSubject').textContent = c.subjects.join('・');
@@ -1369,7 +1369,7 @@ function renderWbCard(){
     let html = '<div class="wb-meta">';
     if(kws.length) html += kws.map(k => `<span class="kw">${escHtml(k)}</span>`).join('');
     html += `<div><button type="button" class="card-add-btn${added ? ' added' : ''}" data-term="${escHtml(c.term)}" onclick="toggleTermBtn(this)">${escHtml(myTermBtnLabel(c.term, added))}</button></div>`;
-    html += `<div class="hint" style="margin-top:8px;">この${isPoint ? '内容' : '用語'}が出てくる問題：${c.qids.length}問（問題番号で検索すると本文を見られます）</div>`;
+    html += `<div class="hint" style="margin-top:8px;">このカードのもとになった問題：${c.qids.length}問（問題番号で検索すると本文を見られます）</div>`;
     html += termNotesSectionHtml(c);
     html += '</div>';
     if(marked !== null){
@@ -1392,7 +1392,7 @@ function renderWbCard(){
   } else if(showBack){
     // 評価済みのカードを見返しているとき
     rate.style.display = 'block';
-    rate.innerHTML = `<div class="nav-row" style="margin-top:10px;"><button class="btn btn-primary" style="margin-top:0;" onclick="wbNext()">${wb.idx + 1 >= wb.cards.length ? '結果を見る' : '次の語へ'}</button></div>`;
+    rate.innerHTML = `<div class="nav-row" style="margin-top:10px;"><button class="btn btn-primary" style="margin-top:0;" onclick="wbNext()">${wb.idx + 1 >= wb.cards.length ? '結果を見る' : '次のカードへ'}</button></div>`;
   } else {
     rate.style.display = 'none';
     rate.innerHTML = '';
@@ -1403,7 +1403,7 @@ function wbMark(known){
   const c = wb.cards[wb.idx];
   wb.marks[wb.idx] = known;
   setWbStatus(c.term, known ? 'known' : 'unsure');
-  if(!known && !isMyTerm(c.term)) addMyTerm(c.term);   // △ はそのままマイ単語帳へ
+  if(!known && !isMyTerm(c.term)) addMyTerm(c.term);   // △ はそのままマイカードへ
   wbNext();
 }
 
@@ -1437,11 +1437,11 @@ function showWbResult(){
       </div></div>`).join('');
     const addBtn = document.getElementById('wbAddUnsureBtn');
     addBtn.disabled = false;
-    addBtn.textContent = '🔖 まとめてマイ単語帳に登録';
+    addBtn.textContent = '🔖 まとめてマイカードに登録';
     addBtn.onclick = () => {
       unsure.forEach(c => addMyTerm(c.term));
       addBtn.disabled = true;
-      addBtn.textContent = `✓ 登録しました（マイ単語帳：${loadMyTerms().length}語）`;
+      addBtn.textContent = `✓ 登録しました（マイカード：${loadMyTerms().length}枚）`;
       renderWordbookHome();
     };
     retry.onclick = () => wbStart(unsure);
@@ -1456,12 +1456,12 @@ function renderMyTermsScreen(){
   const listEl = document.getElementById('myTermsList');
   const cards = getMyTermCards();
   const p = loadWbProgress();
-  document.getElementById('myTermsCount').textContent = cards.length + '語';
+  document.getElementById('myTermsCount').textContent = cards.length + '枚';
   document.getElementById('myTermsStudyBtn').disabled = (cards.length === 0);
   document.getElementById('myTermsClearBtn').style.display = cards.length ? 'block' : 'none';
   document.getElementById('myTermsClearConfirmRow').style.display = 'none';
   if(cards.length === 0){
-    listEl.innerHTML = '<div class="stats-empty">まだ登録がありません。演習の解説の下、または単語帳のうら面にある「🔖 マイ単語帳に登録」で貯められます。</div>';
+    listEl.innerHTML = '<div class="stats-empty">まだ登録がありません。演習の解説の下、またはカードのうら面にある「🔖 マイカードに登録」で貯められます。</div>';
     return;
   }
   listEl.innerHTML = cards.map(c => {
@@ -1622,7 +1622,7 @@ function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   if(name === 'setup'){
-    renderWordbookHome(); // ホームに戻るたびに単語帳の進み具合を更新
+    renderWordbookHome(); // ホームに戻るたびに暗記カードの進み具合を更新
     if(typeof renderGoalCard === 'function') renderGoalCard(); // ホームに戻るたびに今日の目標も更新（演習直後の反映用）
   }
 }
@@ -1807,13 +1807,13 @@ function myNoteCardHtml(m){
 }
 
 const NOTE_HINT_QUIZ = '✏️ この問題のメモを投稿する（母国語OK）。覚え方・つまずきポイント・母国語での一言など。<br>※「2番が正解」のような<b>選択肢の番号には触れない</b>でね（表示のたびに並び順が変わるため）。先生が確認したうえで公開します（不適切な投稿がないかの確認です）。';
-const NOTE_HINT_TERM = '✏️ この用語のメモを投稿する（母国語OK）。<b>どうやって覚えたか</b>・まちがえやすいところ・母国語での一言など。<br>※先生が確認したうえで公開します（不適切な投稿がないかの確認です）。同じ用語が出てくる問題の解説にも表示されます。';
+const NOTE_HINT_TERM = '✏️ このカードのメモを投稿する（母国語OK）。<b>どうやって覚えたか</b>・まちがえやすいところ・母国語での一言など。<br>※先生が確認したうえで公開します（不適切な投稿がないかの確認です）。もとになった問題の解説にも表示されます。';
 
 // メモは「覚え方」を共有する場所であって、正解の根拠ではない。
 // 先生の検収は「不適切な投稿がないか」の確認であり、内容の正しさの保証ではない——
 // この位置づけを、メモを読む前にはっきり示しておく（2026-08-06方針）。
 const NOTE_DISCLAIMER_QUIZ = '💬 これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。正解と根拠は上の解説を見てください。';
-const NOTE_DISCLAIMER_TERM = '💬 これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。用語の意味はカードのうら面を、くわしい根拠は解説を見てください。';
+const NOTE_DISCLAIMER_TERM = '💬 これは生徒どうしの覚え方メモです。覚え方は人それぞれなので、自分に合うものを使ってください。ただし、先生が見ているのは不適切な投稿がないかであって、<b>内容の正しさを保証するものではありません</b>。意味や要点はカードのうら面を、くわしい根拠は解説を見てください。';
 
 function noteFormHtml(qid, hintHtml){
   const pref = getPreferredNoteLang();
@@ -1849,7 +1849,7 @@ function notesSectionHtml(q){
   </details>`;
 }
 
-/* ---- 単語帳のうら面に出す「みんなのメモ」 ----
+/* ---- 暗記カードのうら面に出す「みんなのメモ」 ----
    単語カードは複数の問題から作られている（c.qids）。その全部のメモをまとめて
    1枚のカードに集約して見せる。投稿の保存先は代表問題（c.qids[0]）にするので、
    GAS・スプレッドシートの変更は不要。演習でその問題を解いたときにも同じメモが出る。 */
@@ -2132,7 +2132,7 @@ async function showResult(){
     const bulkBtn = document.getElementById('bulkAddWrongBtn');
     bulkBtn.style.display = 'block';
     bulkBtn.disabled = false;
-    bulkBtn.textContent = '🔖 間違えた問題の用語をまとめてマイ単語帳に登録';
+    bulkBtn.textContent = '🔖 間違えた問題のカードをまとめてマイカードに登録';
     bulkBtn.onclick = () => {
       let added = 0;
       wrong.forEach(r => {
@@ -2143,8 +2143,8 @@ async function showResult(){
       renderWordbookHome();
       bulkBtn.disabled = true;
       bulkBtn.textContent = added
-        ? `✓ ${added}語を登録しました（マイ単語帳：${loadMyTerms().length}語）`
-        : `すでに全部登録済みです（マイ単語帳：${loadMyTerms().length}語）`;
+        ? `✓ ${added}枚を登録しました（マイカード：${loadMyTerms().length}枚）`
+        : `すでに全部登録済みです（マイカード：${loadMyTerms().length}枚）`;
     };
     retryBtn.onclick = () => {
       state.quiz = wrong.map(r=>r.q);
@@ -2173,9 +2173,9 @@ document.getElementById('backToSetupBtn').onclick = () => {
   showScreen('setup');
 };
 
-/* ============ 単語帳：画面操作 ============ */
+/* ============ 暗記カード：画面操作 ============ */
 
-// ホームの単語帳カード
+// ホームの暗記カードのカード
 document.getElementById('wbStartHomeBtn').onclick = () => {
   wb.scope = 'all';
   syncWbScopeChips();
@@ -2204,10 +2204,10 @@ function syncWbScopeChips(){
   const hint = document.getElementById('wbScopeHint');
   if(hint){
     hint.textContent = wb.scope === 'unknown'
-      ? 'まだ「○ 覚えた」をつけていない用語だけを出します。'
+      ? 'まだ「○ 覚えた」をつけていないカードだけを出します。'
       : wb.scope === 'my'
-        ? 'マイ単語帳に登録した用語だけを出します。'
-        : '収録されているすべての用語から出します。';
+        ? 'マイカードに登録したものだけを出します。'
+        : '収録されているすべてのカードから出します。';
   }
 }
 
@@ -2230,6 +2230,8 @@ function syncWbKindChips(){
       : wb.kind === 'point'
         ? '「高次脳機能障害の記憶障害への支援＝メモなど外部補助手段を活用する」のような<b>場面と対応の要点</b>のカードだけを出します。'
         : '用語のカードと、場面と対応の要点のカードの両方を出します。';
+  const label = document.getElementById('wbKindChips');
+  if(label){ /* チップの文言は固定 */ }
   }
 }
 
@@ -2267,7 +2269,7 @@ document.getElementById('wbAgainBtn').onclick = () => {
 };
 document.getElementById('wbHomeFromResultBtn').onclick = () => showScreen('setup');
 
-// マイ単語帳画面
+// マイカード画面
 document.getElementById('homeFromMyTermsBtn').onclick = () => showScreen('setup');
 document.getElementById('myTermsStudyBtn').onclick = () => {
   wb.scope = 'my';
@@ -2697,7 +2699,7 @@ async function initApp(){
   updateMatchCount();                          // 絞り込みを反映してcountRange.maxを再計算
   if(rx && rx.kws.length){ state.prescription = true; setPrescriptionCount(); } // maxに合わせて出題数10をクランプ設定
   buildTermCards();            // 解説末尾の「用語＝意味」から単語カードを組み立てる
-  migrateOldCardDeck();        // 旧マイカード帳（問題単位）をマイ単語帳（用語単位）へ引き継ぐ
+  migrateOldCardDeck();        // 旧マイカード帳（問題単位）をマイカード（見出し単位）へ引き継ぐ
   renderWbSubjectChips();
   syncWbKindChips();
   renderWordbookHome();
