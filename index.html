@@ -1314,6 +1314,7 @@ function renderWbCard(){
     if(kws.length) html += kws.map(k => `<span class="kw">${escHtml(k)}</span>`).join('');
     html += `<div><button type="button" class="card-add-btn${added ? ' added' : ''}" data-term="${escHtml(c.term)}" onclick="toggleTermBtn(this)">${escHtml(myTermBtnLabel(c.term, added))}</button></div>`;
     html += `<div class="hint" style="margin-top:8px;">この用語が出てくる問題：${c.qids.length}問（問題番号で検索すると本文を見られます）</div>`;
+    html += termNotesSectionHtml(c);
     html += '</div>';
     if(marked !== null){
       html += `<div class="feedback ${marked ? 'ok' : 'ng'}" style="margin-top:10px;">${marked ? '○ 覚えた' : '△ あとでもう一度'}（自己評価）</div>`;
@@ -1746,14 +1747,17 @@ function myNoteCardHtml(m){
   </div>`;
 }
 
-function noteFormHtml(q){
+const NOTE_HINT_QUIZ = '✏️ この問題のメモを投稿する（母国語OK）。覚え方・つまずきポイント・母国語での一言など。<br>※「2番が正解」のような<b>選択肢の番号には触れない</b>でね（表示のたびに並び順が変わるため）。先生の確認後にみんなへ公開されます。';
+const NOTE_HINT_TERM = '✏️ この用語のメモを投稿する（母国語OK）。<b>どうやって覚えたか</b>・まちがえやすいところ・母国語での一言など。<br>※先生の確認後にみんなへ公開されます。同じ用語が出てくる問題の解説にも表示されます。';
+
+function noteFormHtml(qid, hintHtml){
   const pref = getPreferredNoteLang();
   const langOpts = NOTE_LANGS.map(l => `<option value="${escHtml(l)}"${l === pref ? ' selected' : ''}>${escHtml(l)}</option>`).join('')
     + `<option value="__other"${pref && NOTE_LANGS.indexOf(pref) === -1 ? ' selected' : ''}>その他…</option>`;
   const typeOpts = NOTE_TYPES.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('');
   const freeShown = pref && NOTE_LANGS.indexOf(pref) === -1;
-  return `<div class="note-form" data-qid="${escHtml(q.id)}">
-    <div class="note-hint">✏️ この問題のメモを投稿する（母国語OK）。覚え方・つまずきポイント・母国語での一言など。<br>※「2番が正解」のような<b>選択肢の番号には触れない</b>でね（表示のたびに並び順が変わるため）。先生の確認後にみんなへ公開されます。</div>
+  return `<div class="note-form" data-qid="${escHtml(qid)}">
+    <div class="note-hint">${hintHtml || NOTE_HINT_QUIZ}</div>
     <div class="note-form-row">
       <select class="note-lang-sel">${langOpts}</select>
       <select class="note-type-sel">${typeOpts}</select>
@@ -1776,7 +1780,36 @@ function notesSectionHtml(q){
     ? `<div class="note-mine-label">あなたの投稿</div><div class="note-mine">${mine.map(myNoteCardHtml).join('')}</div>`
     : '<div class="note-mine"></div>';
   return `<details class="notes-sec"><summary>\u{1F30F} みんなのメモ（${approved.length}件）・投稿する</summary>
-    <div class="notes-body">${listHtml}${mineHtml}${noteFormHtml(q)}</div>
+    <div class="notes-body">${listHtml}${mineHtml}${noteFormHtml(q.id, NOTE_HINT_QUIZ)}</div>
+  </details>`;
+}
+
+/* ---- 単語帳のうら面に出す「みんなのメモ」 ----
+   単語カードは複数の問題から作られている（c.qids）。その全部のメモをまとめて
+   1枚のカードに集約して見せる。投稿の保存先は代表問題（c.qids[0]）にするので、
+   GAS・スプレッドシートの変更は不要。演習でその問題を解いたときにも同じメモが出る。 */
+function termNotesSectionHtml(card){
+  if(!card || !card.qids || !card.qids.length) return '';
+  const seen = new Set();
+  const approved = [];
+  card.qids.forEach(qid => {
+    (NOTES_BY_QID.get(qid) || []).forEach(n => {
+      if(seen.has(n.id)) return;
+      seen.add(n.id);
+      approved.push(n);
+    });
+  });
+  const sorted = sortNotesForDisplay(approved);
+  const qidSet = new Set(card.qids);
+  const mine = MY_NOTES.filter(m => qidSet.has(m.qid) && m.status !== 'approved');
+  const listHtml = sorted.length
+    ? sorted.map(noteCardHtml).join('')
+    : `<div class="note-empty">${NOTES_LOADED ? 'この用語にはまだメモがありません。最初の投稿者になろう！' : 'メモを読み込めませんでした（投稿はできます）'}</div>`;
+  const mineHtml = mine.length
+    ? `<div class="note-mine-label">あなたの投稿</div><div class="note-mine">${mine.map(myNoteCardHtml).join('')}</div>`
+    : '<div class="note-mine"></div>';
+  return `<details class="notes-sec"><summary>\u{1F30F} みんなのメモ（${sorted.length}件）・投稿する</summary>
+    <div class="notes-body">${listHtml}${mineHtml}${noteFormHtml(card.qids[0], NOTE_HINT_TERM)}</div>
   </details>`;
 }
 
