@@ -14,19 +14,22 @@
      ・ドジャーブルー #005A9C はロサンゼルス・ドジャースの公式カラー
      ・背景は生成りアイボリーのまま（長時間見る画面なので目に優しい側を優先）
      色を変えるときはこのブロックだけ直せばよい（全画面がこの変数を参照している）。 */
-  --paper:#F0EEE6;      /* 生成りアイボリー背景 */
-  --ink:#1B1F26;        /* 少し青みを足した墨色 */
-  --teal:#123A63;       /* メインアクセント：藍（アイコンの藍） */
-  --teal-deep:#0B2545;  /* 濃色：ネイビー */
-  --clay:#D97757;       /* 副色：コーラル（アイコンのコーラル・バッジ） */
-  --gold:#005A9C;       /* 差し色：ドジャーブルー（タブ・カード帳まわり） */
-  --line:#E0DED4;       /* 罫線 */
-  --card:#FAF9F5;       /* カード背景（生成り白） */
-  --danger:#C8434A;
-  --good:#4C7A57;
-  --muted:#676970;
-  --muted2:#94969F;
-  --soft:#E6E4DA;       /* バー背景などのソフト面 */
+  --paper:#F1F4F8;      /* クールな白（背景） */
+  --ink:#15202B;        /* 青みのある墨色 */
+  --teal:#005A9C;       /* メインアクセント：ドジャーブルー（ドジャース公式カラー） */
+  --teal-hover:#00477C; /* 上のホバー時。★ここを変えずに--tealだけ変えると色が食い違うので必ずセットで直す */
+  --teal-deep:#0B2545;  /* 濃色：ネイビー（アイコンの藍） */
+  --clay:#E0664F;       /* 副色：コーラル（アイコンのコーラル・バッジ） */
+  --gold:#B98A2E;       /* 差し色：ゴールド（今日の目標・暗記カードのタブ） */
+  --line:#DCE3EB;       /* 罫線 */
+  --card:#FFFFFF;       /* カード背景 */
+  --danger:#D1373D;
+  --good:#2F7A5B;
+  --muted:#5B6B7B;
+  --muted2:#8A97A6;
+  --soft:#E4EBF2;       /* バー背景などのソフト面 */
+  --focus:rgba(0,90,156,.28); /* 入力欄にカーソルを合わせたときの光り方 */
+  --hover-soft:#EAF1F8;       /* 一覧の項目などにカーソルを合わせたときの下地 */
 }
 *{box-sizing:border-box;}
 body{
@@ -100,7 +103,7 @@ header.top .badge{
   width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
   font-size:14px;font-family:inherit;background:#fff;color:var(--ink);
 }
-.kw-input:focus{outline:2px solid rgba(198,97,63,.3);border-color:var(--teal);}
+.kw-input:focus{outline:2px solid var(--focus);border-color:var(--teal);}
 .kw-input::placeholder{color:var(--muted2);}
 .kw-suggest{
   position:relative;background:#fff;border:1px solid var(--line);border-top:none;
@@ -110,7 +113,7 @@ header.top .badge{
 .kw-suggest .item{
   padding:8px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;
 }
-.kw-suggest .item:hover{background:#F1EDE1;}
+.kw-suggest .item:hover{background:var(--hover-soft);}
 .kw-suggest .item .cnt{color:var(--muted2);font-size:11.5px;}
 .kw-selected-chip{
   border:1px solid var(--teal);background:var(--teal);color:#fff;
@@ -149,7 +152,7 @@ input:checked + .slider:before{transform:translateX(18px);}
   letter-spacing:.02em;transition:.15s;
 }
 .btn-primary{background:var(--teal);color:#fff;}
-.btn-primary:hover{background:#B0532F;}
+.btn-primary:hover{background:var(--teal-hover);}
 .btn-primary:disabled{background:#C9C3B4;cursor:not-allowed;}
 .btn-secondary{background:#fff;color:var(--ink);border:1.5px solid var(--teal-deep);margin-top:8px;}
 .btn-secondary:hover{background:var(--card);}
@@ -293,7 +296,7 @@ details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;col
   font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;cursor:pointer;
   font-family:'Noto Sans JP',sans-serif;transition:.15s;
 }
-.card-add-btn:hover{background:#F7F2E3;}
+.card-add-btn:hover{background:var(--hover-soft);}
 .card-add-btn.added{background:#F0E7CC;}
 .card-remove-btn{
   flex-shrink:0;border:1px solid var(--line);background:#fff;color:var(--muted);
@@ -377,7 +380,7 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
 .note-form select,.note-lang-free{font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);}
 .note-lang-free{display:none;width:100%;margin-bottom:6px;}
 .note-body-input{width:100%;min-height:64px;font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;color:var(--ink);}
-.note-body-input:focus{outline:2px solid rgba(198,97,63,.3);border-color:var(--teal);}
+.note-body-input:focus{outline:2px solid var(--focus);border-color:var(--teal);}
 .note-form-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
 .note-count{font-size:11px;color:var(--muted2);}
 .btn-note-submit{background:var(--teal);color:#fff;border:none;border-radius:999px;padding:7px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
