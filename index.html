@@ -258,15 +258,6 @@ body.ruby-off rt{display:none;}
 .choice.wrong .num{background:var(--danger);color:#fff;border-color:var(--danger);}
 .choice.disabled{cursor:default;}
 
-.free-input{
-  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:var(--r-sm);
-  font-size:14px;font-family:inherit;margin-bottom:10px;background:#fff;
-}
-.reveal-area{
-  background:#fff;border:1px dashed #D8D2C2;border-radius:var(--r-sm);padding:12px 14px;margin-top:6px;
-}
-.reveal-area .ans{color:var(--good);font-weight:700;margin-bottom:4px;}
-
 .feedback{
   margin-top:14px;padding:12px 14px;border-radius:var(--r-md);font-size:13.5px;line-height:1.6;
 }
@@ -597,11 +588,6 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
     <div class="chart-card">
       <div class="tab-label">出題形式</div>
       <h3>解答スタイル</h3>
-      <div class="diff-row" id="modeChips">
-        <div class="diff-chip on" data-mode="choices">選択肢あり</div>
-        <div class="diff-chip" data-mode="free">選択肢なし</div>
-      </div>
-      <div class="hint" id="modeHint">問題文の選択肢から答えを選びます。</div>
       <div class="toggle-row" id="shuffleRow">
         <div>
           <div class="label">選択肢の順番をシャッフル</div>
@@ -727,13 +713,6 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
       <div class="q-text" id="qText"></div>
 
       <div id="choiceArea"></div>
-
-      <div id="freeArea" style="display:none;">
-        <input class="free-input" id="freeInput" type="text" placeholder="解答を入力して「解答する」を押してください">
-        <div class="reveal-area" id="revealArea" style="display:none;">
-          <div class="ans" id="revealAns"></div>
-        </div>
-      </div>
 
       <div id="feedbackArea"></div>
 
@@ -1040,8 +1019,6 @@ let state = {
   selectedKeywords: new Set(),
   prescription: false, // カルテQR(?name=&kw=)で開いたときtrue。「今日の分」も絞り込みを尊重する
   keyword: '',
-  choiceStyle: 'choices', // 'choices' | 'free'
-  answerMode: 'choices',  // 実際に使うモード（暗記カードは演習と別機能なのでここには入らない）
   showChoices: true,
   shuffle: true,
   count: 10,
@@ -1053,10 +1030,6 @@ let state = {
   currentChoiceOrder: [],
   answered: false,
 };
-
-function recomputeAnswerMode(){
-  state.answerMode = state.choiceStyle;
-}
 
 function subjectCount(subj){
   return ALL_Q.filter(q => q.subject === subj).length;
@@ -1754,25 +1727,6 @@ function renderMyTermsScreen(){
   });
 }
 
-document.querySelectorAll('#modeChips .diff-chip').forEach(chip => {
-  chip.onclick = () => {
-    document.querySelectorAll('#modeChips .diff-chip').forEach(c => c.classList.remove('on'));
-    chip.classList.add('on');
-    state.choiceStyle = chip.dataset.mode;
-    recomputeAnswerMode();
-    const hint = document.getElementById('modeHint');
-    const shuffleRow = document.getElementById('shuffleRow');
-    if(state.choiceStyle === 'choices'){
-      hint.textContent = '問題文の選択肢から答えを選びます。';
-      shuffleRow.style.display = 'flex';
-    } else {
-      hint.textContent = '選択肢を見ずに自分で考え，正答と見比べて自己採点します。';
-      shuffleRow.style.display = 'none';
-    }
-    updateMatchCount();
-  };
-});
-
 document.getElementById('toggleShuffle').addEventListener('change', e => { state.shuffle = e.target.checked; });
 document.getElementById('toggleRuby').addEventListener('change', e => {
   document.body.classList.toggle('ruby-off', !e.target.checked);
@@ -1872,7 +1826,6 @@ document.getElementById('idSearchInput').addEventListener('input', e => renderSe
 
 // 現在の絞り込み（科目・キーワード・処方箋）でそのまま演習を開始する共通処理
 function startFilteredQuiz(){
-  recomputeAnswerMode();
   const pool = getFilteredPool();
   if(pool.length === 0) return;
   state.pool = pool;
@@ -1921,11 +1874,9 @@ function renderQuestion(){
   document.getElementById('answerBtn').disabled = false;
 
   const choiceArea = document.getElementById('choiceArea');
-  const freeArea = document.getElementById('freeArea');
   choiceArea.style.display = 'none';
-  freeArea.style.display = 'none';
 
-  if(state.answerMode === 'choices' && q.choices && q.choices.length){
+  if(q.choices && q.choices.length){
     document.getElementById('qText').innerHTML = rubyize(q.question);
     choiceArea.style.display = 'block';
     let order = entry ? entry.order : q.choices.map((c,i)=>i+1);
@@ -1951,14 +1902,6 @@ function renderQuestion(){
       }
       choiceArea.appendChild(div);
     });
-  } else {
-    document.getElementById('qText').innerHTML = rubyize(q.question);
-    freeArea.style.display = 'block';
-    document.getElementById('freeInput').value = '';
-    document.getElementById('revealArea').style.display = entry ? 'block' : 'none';
-    if(entry){
-      document.getElementById('revealAns').innerHTML = '正答：' + rubyize(q.choices[q.answer-1]);
-    }
   }
 
   if(entry){
@@ -2270,8 +2213,8 @@ function showFeedback(q, gotCorrect, isReview, blankWord){
   if(q.keywords && q.keywords.length){
     html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
   }
-  // 選択肢モードはシャッフルされているので、解説番号を画面の並びに合わせる
-  html += explanationHtml(q, state.answerMode === 'choices' ? state.currentChoiceOrder : null);
+  // シャッフルされているので、解説番号を画面の並びに合わせる
+  html += explanationHtml(q, state.currentChoiceOrder);
   html += termBtnHtml(q);
   fb.innerHTML = html;
 }
@@ -2287,7 +2230,7 @@ document.getElementById('answerBtn').onclick = () => {
 
   let gotCorrect = false;
 
-  if(state.answerMode === 'choices' && q.choices && q.choices.length){
+  if(q.choices && q.choices.length){
     const selected = state.selectedOrig;
     document.querySelectorAll('.choice').forEach(div => {
       div.classList.add('disabled');
@@ -2298,31 +2241,8 @@ document.getElementById('answerBtn').onclick = () => {
     gotCorrect = (selected === q.answer);
     recordResult(q, gotCorrect, selected, state.currentChoiceOrder);
     showFeedback(q, gotCorrect, false);
-  } else {
-    document.getElementById('revealArea').style.display = 'block';
-    document.getElementById('revealAns').innerHTML = '正答：' + rubyize(q.choices[q.answer-1]);
-    gotCorrect = null; // 記述モードは自己採点
-    const fb = document.getElementById('feedbackArea');
-    let html = `<div class="feedback ok" style="background:#ECE8DC;color:#57534A;">正答と見比べて自己採点してください。下のボタンで合否を記録します。</div>
-      <div class="nav-row" style="margin-top:0;">
-        <button class="btn btn-secondary" style="margin-top:8px;" onclick="markFree(true)">○ 合っていた</button>
-        <button class="btn btn-secondary" style="margin-top:8px;border-color:var(--danger);color:var(--danger);" onclick="markFree(false)">× 間違えた</button>
-      </div>`;
-    if(q.keywords && q.keywords.length){
-      html += `<div style="margin-top:8px;">` + q.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`;
-    }
-    html += explanationHtml(q);
-    html += termBtnHtml(q);
-    fb.innerHTML = html;
-    state.pendingFree = q;
   }
 };
-
-function markFree(correct){
-  recordResult(state.pendingFree, correct, null, null);
-  const fb = document.getElementById('feedbackArea');
-  fb.innerHTML += `<div class="feedback ${correct?'ok':'ng'}" style="margin-top:8px;">記録しました：${correct?'○ 正解':'× 不正解'}</div>`;
-}
 
 function recordResult(q, correct, selected, order, userText){
   state.history[state.idx] = {correct, selected, order, userText};
@@ -2883,7 +2803,6 @@ document.getElementById('quickStartBtn').onclick = () => {
     ? getFilteredPool()
     : ALL_Q.filter(q => q.subject !== '総合問題');
   if(pool.length === 0) return;
-  recomputeAnswerMode();
   const n = Math.min(getDailyGoal(), pool.length);
   state.quiz = shuffleArr(pool).slice(0, n);
   state.idx = 0;
