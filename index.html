@@ -236,6 +236,9 @@ input:checked + .slider:before{transform:translateX(18px);}
 .q-stamp.circle{color:var(--muted);border-color:var(--muted);}
 .q-stamp.x{color:var(--danger);border-color:var(--danger);}
 .q-text{font-size:15.5px;line-height:1.8;margin-bottom:16px;white-space:pre-wrap;}
+ruby{ruby-position:over;}
+rt{font-size:0.55em;color:var(--muted);}
+body.ruby-off rt{display:none;}
 
 .choice{
   display:flex;align-items:flex-start;gap:10px;padding:12px;margin-bottom:8px;
@@ -605,6 +608,18 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
           <div class="desc">正答番号の偏りを防ぎます</div>
         </div>
         <label class="switch"><input type="checkbox" id="toggleShuffle" checked><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="tab-label">表示設定</div>
+      <h3>ふりがな</h3>
+      <div class="toggle-row">
+        <div>
+          <div class="label">漢字にふりがなを表示する</div>
+          <div class="desc">外国籍の方・漢字が苦手な方向けです。日本語話者の方はOFFにすると読みやすくなります</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggleRuby" checked><span class="slider"></span></label>
       </div>
     </div>
 
@@ -1244,6 +1259,48 @@ function escHtml(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* ============ 全漢字ふりがな（外国籍の受験者向け） ============
+   問題文・選択肢・解説・暗記カード（用語・意味）にだけ適用する（アプリのUI文言は対象外）。
+   仕組み：ruby_dict.json（表記→読みの辞書。一般公開版と共通）を起動時に1回読み込み、
+   長い語から先にマッチする正規表現を1本作る。本文はHTMLエスケープした上で
+   辞書にヒットした部分だけ<ruby>タグで包む。ON/OFFはCSSで<rt>の表示/非表示を
+   切り替えるだけなので、毎回の画面の作り直しは不要。GASは一切呼ばないので、
+   1日90分のGAS実行時間には影響しない（questions.jsonとは別の静的ファイル）。 */
+const RUBY_KEY = 'quizAppRubyOn_v1';
+let RUBY_DICT = null;
+let RUBY_RE = null;
+
+function getRubyPref(){
+  try{
+    const v = localStorage.getItem(RUBY_KEY);
+    return v === null ? true : v === '1'; // 初期値はON
+  }catch(e){ return true; }
+}
+function setRubyPref(on){
+  try{ localStorage.setItem(RUBY_KEY, on ? '1' : '0'); }catch(e){}
+}
+
+async function loadRubyDict(){
+  try{
+    const res = await fetch('./ruby_dict.json', { cache: 'default' });
+    if(!res.ok) throw new Error('ruby_dict.json なし');
+    const data = await res.json();
+    RUBY_DICT = data.dict || {};
+    const terms = Object.keys(RUBY_DICT).sort((a,b)=> b.length - a.length);
+    const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    RUBY_RE = terms.length ? new RegExp(terms.map(escRe).join('|'), 'g') : null;
+  }catch(e){
+    RUBY_DICT = null; RUBY_RE = null; // 読めなくてもふりがな無しで演習は続けられる
+  }
+}
+
+// 問題文・選択肢・解説・暗記カードだけに使う。HTMLエスケープ＋<ruby>付与をまとめて行う。
+function rubyize(text){
+  const esc = escHtml(text);
+  if(!RUBY_RE) return esc;
+  return esc.replace(RUBY_RE, m => `<ruby>${m}<rt>${RUBY_DICT[m]}</rt></ruby>`);
+}
+
 /* ============================================================
    暗記カード（解説末尾の一文から自動生成）
    ------------------------------------------------------------
@@ -1561,16 +1618,16 @@ function renderWbCard(){
   const face = document.getElementById('wbFace');
 
   if(!showBack){
-    face.innerHTML = `<div class="wb-term${c.term.length >= 14 ? ' long' : ''}">${escHtml(c.term)}</div>
+    face.innerHTML = `<div class="wb-term${c.term.length >= 14 ? ' long' : ''}">${rubyize(c.term)}</div>
       <div class="wb-ask">${isPoint ? '対応の要点' : '意味'}を思い出してから「めくる」を押してください。</div>`;
   } else {
     let alt = '';
     if(c.defs.length > 1){
       alt = `<div class="wb-def-alt"><span class="lb">別の言い方</span>` +
-        c.defs.slice(1).map(d => '・' + escHtml(d)).join('<br>') + `</div>`;
+        c.defs.slice(1).map(d => '・' + rubyize(d)).join('<br>') + `</div>`;
     }
-    face.innerHTML = `<div class="wb-term${c.term.length >= 14 ? ' long' : ''}" style="font-size:16px;margin-bottom:12px;">${escHtml(c.term)}</div>
-      <div class="wb-def">${escHtml(c.defs[0])}</div>${alt}`;
+    face.innerHTML = `<div class="wb-term${c.term.length >= 14 ? ' long' : ''}" style="font-size:16px;margin-bottom:12px;">${rubyize(c.term)}</div>
+      <div class="wb-def">${rubyize(c.defs[0])}</div>${alt}`;
   }
 
   const meta = document.getElementById('wbMetaArea');
@@ -1643,8 +1700,8 @@ function showWbResult(){
     retry.style.display = 'block';
     document.getElementById('wbUnsureList').innerHTML = unsure.map(c => `
       <div class="wb-row"><div>
-        <div class="t">${escHtml(c.term)}</div>
-        <div class="d">${escHtml(c.defs[0])}</div>
+        <div class="t">${rubyize(c.term)}</div>
+        <div class="d">${rubyize(c.defs[0])}</div>
       </div></div>`).join('');
     const addBtn = document.getElementById('wbAddUnsureBtn');
     addBtn.disabled = false;
@@ -1717,6 +1774,10 @@ document.querySelectorAll('#modeChips .diff-chip').forEach(chip => {
 });
 
 document.getElementById('toggleShuffle').addEventListener('change', e => { state.shuffle = e.target.checked; });
+document.getElementById('toggleRuby').addEventListener('change', e => {
+  document.body.classList.toggle('ruby-off', !e.target.checked);
+  setRubyPref(e.target.checked);
+});
 
 document.getElementById('countRange').addEventListener('input', e => {
   state.count = Number(e.target.value);
@@ -1788,7 +1849,7 @@ function renderSearchResults(query){
   }
   box.innerHTML = matches.map(item => {
     const choicesHtml = (item.choices && item.choices.length)
-      ? item.choices.map((c, i) => `<div class="sr-choice ${i+1===item.answer?'correct':''}">${i+1}. ${c}</div>`).join('')
+      ? item.choices.map((c, i) => `<div class="sr-choice ${i+1===item.answer?'correct':''}">${i+1}. ${rubyize(c)}</div>`).join('')
       : '';
     const kwHtml = item.keywords && item.keywords.length
       ? `<div style="margin-top:8px;">` + item.keywords.map(k=>`<span class="kw">${k}</span>`).join('') + `</div>`
@@ -1798,7 +1859,7 @@ function renderSearchResults(query){
         <span class="sr-id">${item.id}</span>
         <span class="sr-meta">${item.subject}　|　出典：${item.source}</span>
       </div>
-      <div class="sr-q">${item.question}</div>
+      <div class="sr-q">${rubyize(item.question)}</div>
       ${choicesHtml}
       ${kwHtml}
       ${explanationHtml(item)}
@@ -1865,7 +1926,7 @@ function renderQuestion(){
   freeArea.style.display = 'none';
 
   if(state.answerMode === 'choices' && q.choices && q.choices.length){
-    document.getElementById('qText').textContent = q.question;
+    document.getElementById('qText').innerHTML = rubyize(q.question);
     choiceArea.style.display = 'block';
     let order = entry ? entry.order : q.choices.map((c,i)=>i+1);
     if(!entry && state.shuffle) order = shuffleArr(order);
@@ -1875,7 +1936,7 @@ function renderQuestion(){
       const div = document.createElement('div');
       div.className = 'choice';
       div.dataset.orig = origIdx;
-      div.innerHTML = `<div class="num">${pos+1}</div><div>${q.choices[origIdx-1]}</div>`;
+      div.innerHTML = `<div class="num">${pos+1}</div><div>${rubyize(q.choices[origIdx-1])}</div>`;
       if(entry){
         div.classList.add('disabled');
         if(origIdx === q.answer) div.classList.add('correct');
@@ -1891,12 +1952,12 @@ function renderQuestion(){
       choiceArea.appendChild(div);
     });
   } else {
-    document.getElementById('qText').textContent = q.question;
+    document.getElementById('qText').innerHTML = rubyize(q.question);
     freeArea.style.display = 'block';
     document.getElementById('freeInput').value = '';
     document.getElementById('revealArea').style.display = entry ? 'block' : 'none';
     if(entry){
-      document.getElementById('revealAns').textContent = '正答：' + q.choices[q.answer-1];
+      document.getElementById('revealAns').innerHTML = '正答：' + rubyize(q.choices[q.answer-1]);
     }
   }
 
@@ -1936,8 +1997,8 @@ function remapExplanationNumbers(text, order){
 function explanationHtml(q, order){
   let ex = q && q.explanation ? String(q.explanation).trim() : '';
   if(!ex) return '';
-  ex = remapExplanationNumbers(ex, order); // 選択肢シャッフル時は画面の並びに番号を合わせる
-  const esc = ex.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  ex = remapExplanationNumbers(ex, order); // 選択肢シャッフル時は画面の並びに番号を合わせる（rubyize前の生テキストに対して行う）
+  const esc = rubyize(ex);
   // 解説の折りたたみの下に「みんなのメモ」（学生投稿・先生承認制）を付ける
   return `<details class="expl"><summary>${icS('bulb', 5)}解説を見る</summary><div class="expl-body">${esc}</div></details>` + notesSectionHtml(q);
 }
@@ -2202,7 +2263,7 @@ function showFeedback(q, gotCorrect, isReview, blankWord){
     html += `<div class="feedback ok">正解です。</div>`;
   } else if(gotCorrect === false){
     const ans = blankWord !== undefined ? blankWord : q.choices[q.answer-1];
-    html += `<div class="feedback ng">不正解です。正答は <b>${ans}</b> です。</div>`;
+    html += `<div class="feedback ng">不正解です。正答は <b>${rubyize(ans)}</b> です。</div>`;
   } else if(isReview){
     html += `<div class="feedback" style="background:#ECE8DC;color:#57534A;">記述モード（自己採点のみ・記録なし）</div>`;
   }
@@ -2239,7 +2300,7 @@ document.getElementById('answerBtn').onclick = () => {
     showFeedback(q, gotCorrect, false);
   } else {
     document.getElementById('revealArea').style.display = 'block';
-    document.getElementById('revealAns').textContent = '正答：' + q.choices[q.answer-1];
+    document.getElementById('revealAns').innerHTML = '正答：' + rubyize(q.choices[q.answer-1]);
     gotCorrect = null; // 記述モードは自己採点
     const fb = document.getElementById('feedbackArea');
     let html = `<div class="feedback ok" style="background:#ECE8DC;color:#57534A;">正答と見比べて自己採点してください。下のボタンで合否を記録します。</div>
@@ -2924,8 +2985,13 @@ function showStaleNotice(){
 }
 
 async function initApp(){
-  // 問題バンクと「みんなのメモ」を並行して読み込む（メモの失敗はアプリを止めない）
-  const [ok] = await Promise.all([loadQuestionBank(), loadNotes()]);
+  // ふりがなON/OFFの記憶を最初に反映（読み込み待ちで一瞬ちらつかないように先にCSSクラスだけ当てる）
+  const rubyOn = getRubyPref();
+  document.body.classList.toggle('ruby-off', !rubyOn);
+  const toggleRubyEl = document.getElementById('toggleRuby');
+  if(toggleRubyEl) toggleRubyEl.checked = rubyOn;
+  // 問題バンクと「みんなのメモ」「ふりがな辞書」を並行して読み込む（失敗してもアプリ本体は止めない）
+  const [ok] = await Promise.all([loadQuestionBank(), loadNotes(), loadRubyDict()]);
   renderSubjectChips();
   renderPartChips();
   buildKeywordFreq();
