@@ -917,7 +917,14 @@ let Q_FROM_STALE_CACHE = false;   // 通信に失敗して端末の控えで動�
    ・鮮度は裏で取り直して保つので、スプレッドシートを直した翌回には反映される。
    キーは新設。既存の進捗（quizAppWordbookProgress_v1 など）には一切触らない。   */
 const QCACHE_KEY = 'quizAppQuestionCache_v1';
-const QCACHE_FRESH_MS = 6 * 60 * 60 * 1000;   // 6時間以内の控えは「そのまま使ってよい」とみなす
+// 【2026-09-01変更】6時間 → 7日。
+// 理由：40人クラスでの本格稼働を前に実測したところ、この取得は1回2.0MB・7〜12秒かかる。
+// 6時間だと「前日に開いた端末」も授業開始時にいっせいに取りに行くため、同時実行30の上限に当たる。
+// 7日にすると、一度でも開いたことのある端末は授業中この重い取得をしない（鮮度は下の裏での取り直しで保つ）。
+const QCACHE_FRESH_MS = 7 * 24 * 60 * 60 * 1000;   // 7日以内の控えは「そのまま使ってよい」とみなす
+// 裏での取り直しをかける古さのしきい値。12時間＝1日1回ぶん。
+// 【2026-09-01変更】30分→12時間。30分だと授業中に開き直すたび取り直しが走り、結局GASを叩いていた。
+const QCACHE_REFRESH_AFTER_MS = 12 * 60 * 60 * 1000;
 
 function readQuestionCache(){
   try{
@@ -984,10 +991,12 @@ async function loadQuestionBank(){
   // ① 新しい控えがあるなら即座に表示して、最新版は裏で取り直す
   if(cache && (Date.now() - cache.savedAt) < QCACHE_FRESH_MS){
     applyQuestions(cache.questions);
-    // 取り直しは「30分以上たっていたら」「30〜60秒おいてから」にする。
-    // 授業の開始直後にみんなが開く数十秒のあいだ、GASに触りに行かないようにするため。
-    if((Date.now() - cache.savedAt) > 30 * 60 * 1000){
-      const delay = 30000 + Math.floor(Math.random() * 30000);
+    // 取り直しは「12時間以上たっていたら」「60〜180秒おいてから」にする。
+    // 授業の開始直後にみんなが開く数分のあいだ、GASに触りに行かないようにするため。
+    // 【2026-09-01変更】待ち時間を30〜60秒→60〜180秒に広げた。40人ぶんを3分に散らせば
+    // 同時に走るのは平均2〜3本で、同時実行30の上限には遠く届かない。
+    if((Date.now() - cache.savedAt) > QCACHE_REFRESH_AFTER_MS){
+      const delay = 60000 + Math.floor(Math.random() * 120000);
       setTimeout(() => {
         fetchQuestionsWithRetry(true).then(writeQuestionCache).catch(() => {});
       }, delay);
@@ -1967,14 +1976,53 @@ function setPreferredNoteLang(lang){
   try{ localStorage.setItem(NOTE_LANG_KEY, lang); }catch(e){}
 }
 
-// 承認済みメモを起動時に全問分まとめて取得（1問ごとに通信しない）。失敗してもアプリ本体は止めない
-async function loadNotes(){
-  // 起動時に問題データと並行して呼ばれる。GASが重いときにここで固まると
-  // 「読み込んでいます…」が終わらないので、8秒で打ち切る（メモが無くても演習はできる）
+/* ---- みんなのメモの控え（端末内） -------------------------------------------
+   なぜ持たせるか（2026-09-01追加）：
+   ・このメモ取得は、問題データの控えが効いている起動でも毎回GASを呼んでいた（実測2.8〜5.3秒）。
+     40人が授業開始時にいっせいに開くと、これだけで同時実行30の上限を圧迫する。
+   ・控えがあれば2回目以降はGASを待たずに出せる。鮮度は裏で取り直して保つ。
+   キーは新設。既存の進捗・記録のキーには一切触らない。                          */
+const NOTES_CACHE_KEY = 'quizAppNotesCache_v1';
+const NOTES_CACHE_FRESH_MS = 6 * 60 * 60 * 1000;          // 6時間以内の控えはそのまま使う
+const NOTES_CACHE_REFRESH_AFTER_MS = 3 * 60 * 60 * 1000;  // 3時間以上たっていたら裏で取り直す
+
+// 控えは記録名ごとに持つ（mine＝自分の投稿状況が別の生徒のものと混ざらないように）
+function readNotesCache(sid){
+  try{
+    const o = JSON.parse(localStorage.getItem(NOTES_CACHE_KEY) || 'null');
+    if(!o || !Array.isArray(o.notes)) return null;
+    if(String(o.sid || '') !== String(sid || '')) return null;
+    return o;   // { savedAt, sid, notes, mine }
+  }catch(e){ return null; }
+}
+function writeNotesCache(sid, notes, mine){
+  try{
+    localStorage.setItem(NOTES_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(), sid: String(sid || ''), notes: notes, mine: mine
+    }));
+  }catch(e){ /* 容量超過などは黙って諦める。控えは無くても動く */ }
+}
+// メモを投稿すると自分の投稿状況が変わるので、控えを捨てて次回に取り直させる
+function invalidateNotesCache(){
+  try{ localStorage.removeItem(NOTES_CACHE_KEY); }catch(e){}
+}
+
+function applyNotes(notes, mine){
+  NOTES_BY_QID = new Map();
+  (notes || []).forEach(n => {
+    if(!NOTES_BY_QID.has(n.qid)) NOTES_BY_QID.set(n.qid, []);
+    NOTES_BY_QID.get(n.qid).push(n);
+  });
+  MY_NOTES = mine || [];
+  NOTES_LOADED = true;
+}
+
+// 1回ぶんの取得。応答が返らないまま固まらないよう時間で打ち切る
+async function fetchNotesOnce(timeoutMs){
   let ctl = null, timer = null;
   if(typeof AbortController !== 'undefined'){
     ctl = new AbortController();
-    timer = setTimeout(() => ctl.abort(), 8000);
+    timer = setTimeout(() => ctl.abort(), timeoutMs);
   }
   try{
     const sid = getStudentId();
@@ -1982,17 +2030,41 @@ async function loadNotes(){
     const res = await fetch(url, ctl ? { signal: ctl.signal } : undefined);
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'unknown error');
-    NOTES_BY_QID = new Map();
-    (data.notes || []).forEach(n => {
-      if(!NOTES_BY_QID.has(n.qid)) NOTES_BY_QID.set(n.qid, []);
-      NOTES_BY_QID.get(n.qid).push(n);
-    });
-    MY_NOTES = data.mine || [];
-    NOTES_LOADED = true;
-  }catch(e){
-    NOTES_LOADED = false; // メモが読めなくても演習はできる
-  }finally{
+    return { notes: data.notes || [], mine: data.mine || [] };
+  } finally {
     if(timer) clearTimeout(timer);
+  }
+}
+
+// 承認済みメモを起動時に全問分まとめて取得（1問ごとに通信しない）。失敗してもアプリ本体は止めない
+async function loadNotes(){
+  const sid = getStudentId();
+  const cache = readNotesCache(sid);
+
+  // ① 新しい控えがあるなら即座に反映して、最新版は裏で取り直す
+  if(cache && (Date.now() - cache.savedAt) < NOTES_CACHE_FRESH_MS){
+    applyNotes(cache.notes, cache.mine);
+    if((Date.now() - cache.savedAt) > NOTES_CACHE_REFRESH_AFTER_MS){
+      const delay = 60000 + Math.floor(Math.random() * 120000);   // 60〜180秒に散らす
+      setTimeout(() => {
+        fetchNotesOnce(20000).then(d => {
+          applyNotes(d.notes, d.mine);
+          writeNotesCache(getStudentId(), d.notes, d.mine);
+        }).catch(() => {});
+      }, delay);
+    }
+    return;
+  }
+
+  // ② 取りに行く。GASが重いときにここで固まると「読み込んでいます…」が終わらないので8秒で打ち切る
+  try{
+    const d = await fetchNotesOnce(8000);
+    applyNotes(d.notes, d.mine);
+    writeNotesCache(sid, d.notes, d.mine);
+  }catch(e){
+    // ③ 取れなくても、古い控えがあるならそれで出す。無ければメモ無しで演習する
+    if(cache) applyNotes(cache.notes, cache.mine);
+    else NOTES_LOADED = false;
   }
 }
 
@@ -2137,6 +2209,7 @@ async function handleNoteSubmit(btn){
     setPreferredNoteLang(lang);
     const mineEntry = { id: data.noteId, qid, lang, body, status: 'pending', reason: '', date: '' };
     MY_NOTES.unshift(mineEntry);
+    invalidateNotesCache();   // 自分の投稿状況が変わったので、次に開いたときは取り直す（2026-09-01追加）
     const sec = form.closest('.notes-sec');
     const mineArea = sec ? sec.querySelector('.note-mine') : null;
     if(mineArea) mineArea.insertAdjacentHTML('afterbegin', myNoteCardHtml(mineEntry));
@@ -2508,6 +2581,46 @@ function savePendingQueue(queue){
   try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(queue)); }catch(e){}
 }
 
+/* ---- 自分の記録の控え（端末内） ---------------------------------------------
+   なぜ持たせるか（2026-09-01追加）：
+   ・記録の取得は、起動時の「目標カード」と「記録」画面の両方で毎回GASを呼んでいた（実測3.7秒）。
+     40人が授業開始時にいっせいに開くと、これだけで同時実行30の上限を圧迫する。
+   ・この控えに入るのは「自分が解いた記録」だけで、増えるのは自分が演習を終えたときだけ。
+     だから保存が成功したぶんを控えにも足しておけば、取り直さなくても中身は正しいままになる。
+   キーは新設。未送信キュー（quizAppHistory_v1）には一切触らない。                */
+const HISTORY_CACHE_KEY = 'quizAppHistoryCache_v1';
+const HISTORY_FRESH_STARTUP_MS = 6 * 60 * 60 * 1000;   // 起動時の目標カードはこの範囲なら控えでよい
+const HISTORY_FRESH_STATS_MS = 5 * 60 * 1000;          // 「記録」画面は生徒が自分で開く操作なので短め
+
+// 控えは記録名ごとに持つ（同じ端末を別の生徒が使ったときに混ざらないように）
+function readHistoryCache(sid){
+  try{
+    const o = JSON.parse(localStorage.getItem(HISTORY_CACHE_KEY) || 'null');
+    if(!o || !Array.isArray(o.history)) return null;
+    if(String(o.sid || '') !== String(sid || '')) return null;
+    return o;   // { savedAt, sid, history }
+  }catch(e){ return null; }
+}
+function writeHistoryCache(sid, history){
+  try{
+    localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(), sid: String(sid || ''), history: history
+    }));
+  }catch(e){ /* 容量超過などは黙って諦める。控えは無くても動く */ }
+}
+// サーバーへの保存が成功したぶんを控えにも足す（savedAtは動かさない＝鮮度の時計はそのまま）
+function appendHistoryCache(sid, session){
+  const cache = readHistoryCache(sid);
+  if(!cache) return;   // 控えが無いときは何もしない。次に取りに行けば入る
+  try{
+    cache.history.push(session);
+    localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(cache));
+  }catch(e){}
+}
+function clearHistoryCache(){
+  try{ localStorage.removeItem(HISTORY_CACHE_KEY); }catch(e){}
+}
+
 // サーバーに保存。失敗時はローカルにキューイングし、次回起動時などに再送できるようにする
 async function saveSessionToHistory(session){
   const studentId = getStudentId();
@@ -2519,6 +2632,7 @@ async function saveSessionToHistory(session){
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'unknown error');
+    appendHistoryCache(studentId, session);   // 控えにも反映（取り直さずに今日の回数が正しくなる）
   }catch(e){
     // 通信エラー時はローカルにキューイング（次回保存時にまとめて再送）
     const queue = loadPendingQueue();
@@ -2542,6 +2656,7 @@ async function flushPendingQueue(){
       });
       const data = await res.json();
       if(!data.ok) throw new Error(data.error || 'unknown error');
+      appendHistoryCache(studentId, session);   // 送れたぶんは控えへ移す（キューからは下で消える）
     }catch(e){
       remaining.push(session);
     }
@@ -2550,18 +2665,31 @@ async function flushPendingQueue(){
 }
 
 // サーバーから履歴を取得。未送信分があればローカルキューを末尾に補う
-async function loadHistory(){
+// maxAgeMs：この時間内の控えがあれば通信しない（0を渡すと必ず取りに行く）
+async function loadHistory(maxAgeMs){
   const studentId = getStudentId();
   if(!studentId) return { history: [], offline: false };
+
+  const fresh = (typeof maxAgeMs === 'number') ? maxAgeMs : 0;
+  const cache = readHistoryCache(studentId);
+
+  // ① 新しい控えがあるなら通信しない
+  if(cache && fresh > 0 && (Date.now() - cache.savedAt) < fresh){
+    return { history: cache.history.concat(loadPendingQueue()), offline: false };
+  }
+
+  // ② 取りに行く
   try{
     const url = `${GAS_API_URL}?studentId=${encodeURIComponent(studentId)}`;
     const res = await fetch(url);
     const data = await res.json();
     if(!data.ok) throw new Error(data.error || 'unknown error');
-    const pending = loadPendingQueue();
-    return { history: data.history.concat(pending), offline: false };
+    writeHistoryCache(studentId, data.history);
+    return { history: data.history.concat(loadPendingQueue()), offline: false };
   }catch(e){
-    // 通信エラー時はローカルキューのみで表示（取得できない旨を呼び出し側に伝える）
+    // ③ 取れなくても、控えがあるならそれで出す（「接続できません」を出さずに済む）
+    if(cache) return { history: cache.history.concat(loadPendingQueue()), offline: false };
+    // 控えも無いときだけ、取得できない旨を呼び出し側に伝える
     return { history: loadPendingQueue(), offline: true };
   }
 }
@@ -2578,6 +2706,7 @@ async function clearHistory(){
     // 通信エラー時はローカルキューだけ消す（サーバー側のデータは消えない点に注意）
   }
   savePendingQueue([]);
+  clearHistoryCache();   // 控えも消す（消したはずの記録が残って見えないように）
 }
 
 async function renderStatsScreen(){
@@ -2591,7 +2720,8 @@ async function renderStatsScreen(){
   subjEl.innerHTML = '';
   weakEl.innerHTML = '';
 
-  const { history, offline } = await loadHistory();
+  // 生徒が自分で開く画面なので鮮度は短め（5分）。同時に開かれても控えが効く（2026-09-01）
+  const { history, offline } = await loadHistory(HISTORY_FRESH_STATS_MS);
 
   if(offline){
     overviewEl.innerHTML = icS('warn', 4) + 'サーバーに接続できませんでした。通信環境をご確認のうえ、もう一度お試しください。';
@@ -2753,7 +2883,9 @@ async function renderGoalCard(){
     badgeEl.style.display = 'none';
     return;
   }
-  const { history, offline } = await loadHistory();
+  // 起動のたびに走るので控えを長め（6時間）に使う。演習を終えたぶんは控えに足されるので
+  // 「今日の学習数」「連続日数」は取り直さなくても正しい（2026-09-01）
+  const { history, offline } = await loadHistory(HISTORY_FRESH_STARTUP_MS);
   if(offline){
     todayEl.textContent = '―';
     streakEl.textContent = '―';
