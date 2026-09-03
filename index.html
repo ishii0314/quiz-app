@@ -258,6 +258,91 @@ body.ruby-off rt{display:none;}
 .choice.wrong .num{background:var(--danger);color:#fff;border-color:var(--danger);}
 .choice.disabled{cursor:default;}
 
+/* ---- 選択肢に「これは違う」の×をつける（2026-09-03追加） ----
+   右端の小さな✕を押すと打ち消し線＋グレーになる。もう一度押すと戻る。
+   ×をつけた選択肢も選べる（選ぶと自動で外れる）。誤操作で詰まらないようにするため。 */
+.choice .ctext{flex:1;min-width:0;}
+.choice-x{
+  flex-shrink:0;width:26px;height:26px;margin:-2px -4px 0 0;padding:0;
+  border:none;background:none;cursor:pointer;color:#B9B3A4;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;font-family:inherit;transition:.12s;
+}
+.choice-x:hover{background:var(--soft);color:var(--danger);}
+.choice-x svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.2;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;}
+.choice.ruled .ctext{text-decoration:line-through;text-decoration-thickness:1.5px;color:#A8A296;}
+.choice.ruled{background:#FAF9F6;border-color:#E4E0D5;}
+.choice.ruled .num{color:#BDB7A8;border-color:#E4E0D5;}
+.choice.ruled .choice-x{color:var(--danger);}
+.choice.disabled .choice-x{display:none;}
+
+/* ---- 進捗カード（2026-09-03追加）。絞り込みに連動してその範囲の正解済みを出す ---- */
+.prog-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.prog-scope{font-size:13px;color:var(--muted);}
+.prog-main{font-size:13.5px;color:var(--ink);}
+.prog-main b{font-size:20px;color:var(--teal);margin:0 2px;}
+.prog-track{height:8px;border-radius:999px;background:var(--soft);overflow:hidden;}
+.prog-fill{height:100%;background:var(--teal);border-radius:999px;transition:width .3s;}
+.prog-done{margin-top:10px;padding:9px 12px;border-radius:var(--r-sm);
+  background:#E3F0E9;color:#256B4E;font-size:13px;font-weight:700;}
+/* ---- 機能追加のお知らせ（2026-09-03追加）。1度閉じたら二度と出ない ---- */
+.news-card{
+  background:#E9F1F8;border:1px solid #C7DCEC;border-radius:var(--r-lg);
+  padding:14px 16px 13px;margin-bottom:16px;
+}
+.news-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.news-badge{
+  font-size:11px;font-weight:700;color:#fff;background:#005A9C;
+  border-radius:var(--r-pill);padding:3px 11px;letter-spacing:.02em;
+}
+.news-close{
+  width:26px;height:26px;border:none;background:none;cursor:pointer;color:#6F8CA4;
+  display:flex;align-items:center;justify-content:center;border-radius:50%;
+  padding:0;margin:-2px -4px 0 0;font-family:inherit;
+}
+.news-close:hover{background:#D8E7F2;color:#00456F;}
+.news-close svg{width:14px;height:14px;stroke:currentColor;stroke-width:2.2;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;}
+.news-list{margin:0;padding-left:18px;font-size:13px;line-height:1.75;color:var(--ink);}
+.news-list li{margin-bottom:5px;}
+.news-list li:last-child{margin-bottom:0;}
+.news-list b{color:#00456F;}
+.news-note{
+  margin-top:10px;padding-top:9px;border-top:1px solid #C7DCEC;
+  font-size:12px;line-height:1.6;color:#4E6B82;
+}
+
+/* 科目ごとの内訳（折りたたみ）。解説と同じ details の型にそろえる（2026-09-03追加） */
+details.prog-break{margin-top:12px;border:1px solid var(--line);border-radius:var(--r-sm);
+  background:#fff;overflow:hidden;}
+details.prog-break>summary{list-style:none;cursor:pointer;padding:10px 13px;
+  font-size:13px;font-weight:700;color:var(--teal);user-select:none;}
+details.prog-break>summary::-webkit-details-marker{display:none;}
+details.prog-break>summary::before{content:"\25B8";margin-right:6px;font-size:11px;}
+details.prog-break[open]>summary::before{content:"\25BE";}
+.prog-break-body{padding:2px 13px 12px;}
+.pb-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12.5px;}
+.pb-row+.pb-row{border-top:1px solid var(--soft);}
+.pb-name{flex:0 0 44%;color:var(--ink);line-height:1.4;}
+.pb-track{flex:1;height:6px;border-radius:999px;background:var(--soft);overflow:hidden;}
+.pb-fill{height:100%;background:var(--teal);border-radius:999px;}
+.pb-num{flex:0 0 82px;text-align:right;color:var(--muted);font-size:12px;white-space:nowrap;}
+.pb-num b{color:var(--teal);font-weight:700;}
+.pb-row.done .pb-name{color:var(--muted);}
+.pb-row.done .pb-fill{background:var(--good);}
+.pb-row.done .pb-num b{color:var(--good);}
+.prog-actions{display:flex;justify-content:flex-end;margin-top:10px;}
+.prog-reset{background:none;border:none;color:var(--muted);font-size:12px;
+  text-decoration:underline;cursor:pointer;font-family:inherit;padding:4px;}
+.prog-reset:hover{color:var(--danger);}
+.prog-confirm{display:flex;align-items:center;gap:8px;justify-content:flex-end;
+  margin-top:10px;font-size:12.5px;color:var(--muted);flex-wrap:wrap;}
+.prog-confirm button{border:none;border-radius:var(--r-pill);padding:6px 14px;
+  font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.prog-confirm .yes{background:var(--danger);color:#fff;}
+.prog-confirm .no{background:var(--soft);color:var(--muted);}
+
 .feedback{
   margin-top:14px;padding:12px 14px;border-radius:var(--r-md);font-size:13.5px;line-height:1.6;
 }
@@ -530,6 +615,23 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
   <!-- ============ 設定画面 ============ -->
   <section class="screen active" id="screen-setup">
 
+    <!-- 機能追加のお知らせ（1度閉じたら二度と出ない。2026-09-03新設） -->
+    <div class="news-card" id="newsCard" style="display:none;">
+      <div class="news-head">
+        <span class="news-badge">新しくなりました</span>
+        <button type="button" class="news-close" id="newsCloseBtn" aria-label="閉じる">
+          <svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+        </button>
+      </div>
+      <ul class="news-list">
+        <li><b>続きから解けるようになりました。</b>正解できた問題はもう出ないので、途中でやめても次はその先から始まります。</li>
+        <li><b>問題番号の順に出せます。</b>全問クリアを目指すときに、どこまで進んだか分かります。</li>
+        <li><b>科目ごとの進み具合が見られます。</b>ホームの「正解できた問題」で確認してください。</li>
+        <li><b>選択肢に×をつけられます。</b>「これは違う」と思った選択肢は、右の✕を押すと線が引けます。</li>
+      </ul>
+      <div class="news-note">進み具合の記録は今日からです。これまでに解いた分は数に入っていません。</div>
+    </div>
+
     <!-- カルテ処方箋モード（QR ?name=&kw= から開いたときだけ表示） -->
     <div class="chart-card" id="rxBanner" style="display:none;background:var(--hover-soft);">
       <div class="tab-label">カルテ処方箋</div>
@@ -588,12 +690,49 @@ details.notes-sec[open]>summary::before{content:"\25BE";}
     <div class="chart-card">
       <div class="tab-label">出題形式</div>
       <h3>解答スタイル</h3>
+      <div class="toggle-row" id="unsolvedRow">
+        <div>
+          <div class="label">まだ正解していない問題だけ出す</div>
+          <div class="desc">正解した問題はもう出ません。全問クリアを目指すときはONにしてください</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggleUnsolved" checked><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row" id="orderRow">
+        <div>
+          <div class="label">問題番号の順に出す</div>
+          <div class="desc">科目ごとに番号順で出ます。OFFにするとランダムです</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="toggleOrdered" checked><span class="slider"></span></label>
+      </div>
       <div class="toggle-row" id="shuffleRow">
         <div>
           <div class="label">選択肢の順番をシャッフル</div>
           <div class="desc">正答番号の偏りを防ぎます</div>
         </div>
         <label class="switch"><input type="checkbox" id="toggleShuffle" checked><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="chart-card" id="progCard">
+      <div class="tab-label">進み具合</div>
+      <h3>正解できた問題</h3>
+      <div class="prog-row">
+        <span class="prog-scope" id="progScope">全科目</span>
+        <span class="prog-main"><span id="progTotal">0</span>問中 <b id="progSolved">0</b>問 正解済み（<span id="progPct">0</span>%）</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      <div class="prog-done" id="progDone" style="display:none;">この範囲はすべて正解しました。おつかれさま！</div>
+      <details class="prog-break" id="progBreak">
+        <summary>科目ごとの内訳を見る</summary>
+        <div class="prog-break-body" id="progBreakBody"></div>
+      </details>
+      <div class="prog-actions" id="progActions">
+        <button type="button" class="prog-reset" id="progResetBtn">進捗をリセットする</button>
+      </div>
+      <div class="prog-confirm" id="progConfirm" style="display:none;">
+        <span>正解の記録をすべて消します。よろしいですか？</span>
+        <button type="button" class="yes" id="progResetYes">消す</button>
+        <button type="button" class="no" id="progResetNo">やめる</button>
       </div>
     </div>
 
@@ -1029,7 +1168,9 @@ let state = {
   prescription: false, // カルテQR(?name=&kw=)で開いたときtrue。「今日の分」も絞り込みを尊重する
   keyword: '',
   showChoices: true,
-  shuffle: true,
+  shuffle: true,          // 選択肢の並び順（問題の並び順ではない）
+  unsolvedOnly: true,     // まだ正解していない問題だけ出す（2026-09-03追加）
+  ordered: true,          // 科目→ID順に出す。OFFでランダム（2026-09-03追加）
   count: 10,
   pool: [],
   quiz: [],
@@ -1737,6 +1878,11 @@ function renderMyTermsScreen(){
 }
 
 document.getElementById('toggleShuffle').addEventListener('change', e => { state.shuffle = e.target.checked; });
+document.getElementById('toggleUnsolved').addEventListener('change', e => {
+  state.unsolvedOnly = e.target.checked;
+  updateMatchCount();   // 「条件に一致する問題」の件数も未正解ベースに変わる
+});
+document.getElementById('toggleOrdered').addEventListener('change', e => { state.ordered = e.target.checked; });
 document.getElementById('toggleRuby').addEventListener('change', e => {
   document.body.classList.toggle('ruby-off', !e.target.checked);
   setRubyPref(e.target.checked);
@@ -1764,12 +1910,96 @@ function getFilteredPool(){
 
 function updateMatchCount(){
   const pool = getFilteredPool();
-  document.getElementById('matchN').textContent = pool.length;
+  // 「まだ正解していない問題だけ出す」がONのときは、出題対象の件数を出す（0なら全体の件数）
+  let shown = pool;
+  if(state.unsolvedOnly){
+    const rest = pool.filter(q => !SOLVED.has(q.id));
+    if(rest.length > 0) shown = rest;
+  }
+  document.getElementById('matchN').textContent = shown.length;
   if(typeof renderQuickScopeNote === 'function') renderQuickScopeNote();
   const startBtn = document.getElementById('startBtn');
-  startBtn.disabled = pool.length === 0;
-  document.getElementById('countRange').max = Math.max(5, Math.min(50, pool.length));
+  startBtn.disabled = shown.length === 0;
+  document.getElementById('countRange').max = Math.max(5, Math.min(50, shown.length));
+  renderProgressCard(pool);
 }
+
+// 進捗カード（2026-09-03追加）。いまの絞り込み範囲の「正解できた問題」を出す
+function renderProgressCard(pool){
+  const card = document.getElementById('progCard');
+  if(!card) return;
+  const list = pool || getFilteredPool();
+  const total = list.length;
+  const solved = list.filter(q => SOLVED.has(q.id)).length;
+  const pct = total ? Math.round(solved / total * 100) : 0;
+
+  const subs = [...state.selectedSubjects];
+  let scope = '全科目';
+  if(subs.length === 1) scope = subs[0];
+  else if(subs.length > 1) scope = `${subs.length}科目`;
+  if(state.selectedKeywords.size > 0 || state.selectedRounds.size > 0) scope += '（絞り込み中）';
+
+  document.getElementById('progScope').textContent = scope;
+  document.getElementById('progTotal').textContent = total;
+  document.getElementById('progSolved').textContent = solved;
+  document.getElementById('progPct').textContent = pct;
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progDone').style.display =
+    (total > 0 && solved === total) ? 'block' : 'none';
+  renderProgressBreakdown(list);
+}
+
+// 科目ごとの内訳（折りたたみの中身）。いまの絞り込み範囲にある科目だけを、
+// SUBJECTS の並び順（＝出題順と同じ）で出す（2026-09-03追加）
+function renderProgressBreakdown(list){
+  const body = document.getElementById('progBreakBody');
+  const wrap = document.getElementById('progBreak');
+  if(!body || !wrap) return;
+
+  const agg = {};
+  list.forEach(q => {
+    if(!agg[q.subject]) agg[q.subject] = { total: 0, solved: 0 };
+    agg[q.subject].total++;
+    if(SOLVED.has(q.id)) agg[q.subject].solved++;
+  });
+
+  const names = Object.keys(agg).sort((a, b) => {
+    const sa = (a in SUBJECT_ORDER) ? SUBJECT_ORDER[a] : 99;
+    const sb = (b in SUBJECT_ORDER) ? SUBJECT_ORDER[b] : 99;
+    return sa - sb;
+  });
+
+  // 科目が1つしかない範囲では、上の表示と同じ内容になるので折りたたみ自体を出さない
+  wrap.style.display = names.length > 1 ? 'block' : 'none';
+  if(names.length <= 1) return;
+
+  body.innerHTML = names.map(name => {
+    const { total, solved } = agg[name];
+    const pct = total ? Math.round(solved / total * 100) : 0;
+    const done = (total > 0 && solved === total);
+    return `<div class="pb-row${done ? ' done' : ''}">
+      <div class="pb-name">${escHtml(name)}</div>
+      <div class="pb-track"><div class="pb-fill" style="width:${pct}%"></div></div>
+      <div class="pb-num"><b>${solved}</b>/${total}問</div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('progResetBtn').onclick = () => {
+  document.getElementById('progActions').style.display = 'none';
+  document.getElementById('progConfirm').style.display = 'flex';
+};
+document.getElementById('progResetNo').onclick = () => {
+  document.getElementById('progConfirm').style.display = 'none';
+  document.getElementById('progActions').style.display = 'flex';
+};
+document.getElementById('progResetYes').onclick = () => {
+  SOLVED = new Set();
+  saveSolved();
+  document.getElementById('progConfirm').style.display = 'none';
+  document.getElementById('progActions').style.display = 'flex';
+  updateMatchCount();
+};
 
 function shuffleArr(arr){
   const a = arr.slice();
@@ -1778,6 +2008,49 @@ function shuffleArr(arr){
     [a[i],a[j]] = [a[j],a[i]];
   }
   return a;
+}
+
+/* ---- 正解できた問題の記録（端末内）--------------------------------------------
+   なぜ持たせるか（2026-09-03追加）：
+   ・出題は毎回「絞り込んだ範囲からランダムにn問」だったため、全問を解こうとすると
+     同じ問題ばかり出て進まず、途中でホームに戻ると続きも分からなかった。
+   ・「正解できた問題ID」の集合をひとつ持つだけで、「順番に解く」も「未正解だけ出す」も、
+     科目で絞った場合も同じ仕組みで成立する。
+   ・「解いた」＝「正解した」とする（ishiiさん判断）。間違えた問題は記録されず、また出てくる。
+     補講の方針「正解できるまで繰り返す」と一致する。
+   キーは新設。既存の進捗・記録のキーには一切触れない。サーバー（Code.gs）も無変更。  */
+const SOLVED_KEY = 'quizAppSolvedIds_v1';
+let SOLVED = new Set();
+
+function loadSolved(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(SOLVED_KEY) || '[]');
+    SOLVED = new Set(Array.isArray(arr) ? arr : []);
+  }catch(e){ SOLVED = new Set(); }
+}
+function saveSolved(){
+  try{ localStorage.setItem(SOLVED_KEY, JSON.stringify([...SOLVED])); }
+  catch(e){ /* 容量超過などは黙って諦める。記録が無くても演習はできる */ }
+}
+function markSolved(id){
+  if(!id || SOLVED.has(id)) return;
+  SOLVED.add(id);
+  saveSolved();
+}
+
+// 出題の並び順：科目 → ID の昇順。
+// IDだけの昇順だと出典（第1回〜第3回）ごとにまとまって科目がばらけるため、
+// 「どこまで進んだか」が実感しにくい。科目でまとめると、科目を絞ったときも
+// 全科目のときも同じ規則で予測できる。
+const SUBJECT_ORDER = {};
+SUBJECTS.forEach((s, i) => { SUBJECT_ORDER[s] = i; });
+function sortByCourse(list){
+  return list.slice().sort((a, b) => {
+    const sa = (a.subject in SUBJECT_ORDER) ? SUBJECT_ORDER[a.subject] : 99;
+    const sb = (b.subject in SUBJECT_ORDER) ? SUBJECT_ORDER[b.subject] : 99;
+    if(sa !== sb) return sa - sb;
+    return String(a.id).localeCompare(String(b.id), 'ja');
+  });
 }
 
 function diffMeta(d){
@@ -1833,13 +2106,29 @@ function renderSearchResults(query){
 
 document.getElementById('idSearchInput').addEventListener('input', e => renderSearchResults(e.target.value));
 
+// 出題する問題を選ぶ（2026-09-03改訂）。
+// ① 範囲：state.unsolvedOnly なら、まだ正解していない問題だけに絞る
+//    （その結果0問になったら、範囲をそのままにして全部から出す＝手が止まらないように）
+// ② 並び：state.ordered なら科目→ID順の先頭からn問、そうでなければランダムにn問
+function pickQuestions(pool, n){
+  let target = pool;
+  if(state.unsolvedOnly){
+    const rest = pool.filter(q => !SOLVED.has(q.id));
+    if(rest.length > 0) target = rest;   // 全問正解済みのときは元のpoolのまま
+  }
+  const count = Math.min(n, target.length);
+  return state.ordered ? sortByCourse(target).slice(0, count)
+                       : shuffleArr(target).slice(0, count);
+}
+
 // 現在の絞り込み（科目・キーワード・処方箋）でそのまま演習を開始する共通処理
 function startFilteredQuiz(){
   const pool = getFilteredPool();
   if(pool.length === 0) return;
   state.pool = pool;
   const n = Math.min(state.count, pool.length);
-  state.quiz = shuffleArr(pool).slice(0, n);
+  state.quiz = pickQuestions(pool, n);
+  if(state.quiz.length === 0) return;
   state.idx = 0;
   state.correct = 0;
   state.results = [];
@@ -1857,6 +2146,7 @@ function showScreen(name){
   document.getElementById('screen-'+name).classList.add('active');
   if(name === 'setup'){
     renderWordbookHome(); // ホームに戻るたびに暗記カードの進み具合を更新
+    updateMatchCount();   // 正解できた問題が増えているので、進捗カードと件数を更新（2026-09-03追加）
     if(typeof renderGoalCard === 'function') renderGoalCard(); // ホームに戻るたびに今日の目標も更新（演習直後の反映用）
   }
 }
@@ -1896,7 +2186,10 @@ function renderQuestion(){
       const div = document.createElement('div');
       div.className = 'choice';
       div.dataset.orig = origIdx;
-      div.innerHTML = `<div class="num">${pos+1}</div><div>${rubyize(q.choices[origIdx-1])}</div>`;
+      // 右端の✕は「これは違う」と自分で消すための印（2026-09-03追加）。解答後は出さない
+      const xBtn = entry ? '' :
+        `<button type="button" class="choice-x" title="これは違うと思う"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>`;
+      div.innerHTML = `<div class="num">${pos+1}</div><div class="ctext">${rubyize(q.choices[origIdx-1])}</div>${xBtn}`;
       if(entry){
         div.classList.add('disabled');
         if(origIdx === q.answer) div.classList.add('correct');
@@ -1904,10 +2197,20 @@ function renderQuestion(){
       } else {
         div.onclick = () => {
           if(state.answered) return;
+          // ×をつけた選択肢も選べる。選んだら×は自動で外す（誤操作で詰まらないように）
+          div.classList.remove('ruled');
           document.querySelectorAll('.choice').forEach(c=>c.classList.remove('selected'));
           div.classList.add('selected');
           state.selectedOrig = origIdx;
         };
+        const xEl = div.querySelector('.choice-x');
+        if(xEl){
+          xEl.onclick = (ev) => {
+            ev.stopPropagation();          // 選択と取り違えないように
+            if(state.answered) return;
+            div.classList.toggle('ruled');
+          };
+        }
       }
       choiceArea.appendChild(div);
     });
@@ -2312,6 +2615,9 @@ document.getElementById('answerBtn').onclick = () => {
       else if(orig === selected) div.classList.add('wrong');
     });
     gotCorrect = (selected === q.answer);
+    // 解答したら「これは違う」の×は役目を終える。正誤の色分けを主役にする（2026-09-03追加）
+    document.querySelectorAll('.choice.ruled').forEach(c => c.classList.remove('ruled'));
+    if(gotCorrect) markSolved(q.id);   // 正解した問題だけ進捗に入れる（通信なし）
     recordResult(q, gotCorrect, selected, state.currentChoiceOrder);
     showFeedback(q, gotCorrect, false);
   }
@@ -2936,7 +3242,8 @@ document.getElementById('quickStartBtn').onclick = () => {
     : ALL_Q.filter(q => q.subject !== '総合問題');
   if(pool.length === 0) return;
   const n = Math.min(getDailyGoal(), pool.length);
-  state.quiz = shuffleArr(pool).slice(0, n);
+  state.quiz = pickQuestions(pool, n);   // 「今日の分」も未正解・順番の設定に従う（2026-09-03）
+  if(state.quiz.length === 0) return;
   state.idx = 0;
   state.correct = 0;
   state.results = [];
@@ -3023,6 +3330,27 @@ if(rxClearBtnEl){
 }
 
 // 通信に失敗して端末の控えで動いているときに、その旨を静かに知らせる
+/* ---- 機能追加のお知らせ（2026-09-03追加）------------------------------------
+   次に開いたときに1度だけ出し、閉じたら二度と出さない。
+   キーには「どのお知らせまで見たか」を入れる。次に機能を足したときは
+   NEWS_ID を新しい日付に変えれば、また1度だけ出るようになる。            */
+const NEWS_KEY = 'quizAppNewsSeen_v1';
+const NEWS_ID  = '2026-09-03';
+
+function maybeShowNews(){
+  const card = document.getElementById('newsCard');
+  if(!card) return;
+  let seen = '';
+  try{ seen = localStorage.getItem(NEWS_KEY) || ''; }catch(e){}
+  if(seen === NEWS_ID) return;      // もう見た人には出さない
+  card.style.display = 'block';
+  const btn = document.getElementById('newsCloseBtn');
+  if(btn) btn.onclick = () => {
+    card.style.display = 'none';
+    try{ localStorage.setItem(NEWS_KEY, NEWS_ID); }catch(e){}
+  };
+}
+
 function showStaleNotice(){
   const host = document.querySelector('header.top');
   if(!host || document.getElementById('staleNotice')) return;
@@ -3041,6 +3369,7 @@ async function initApp(){
   document.body.classList.toggle('ruby-off', !rubyOn);
   const toggleRubyEl = document.getElementById('toggleRuby');
   if(toggleRubyEl) toggleRubyEl.checked = rubyOn;
+  loadSolved();   // 正解できた問題の記録を端末から読む（2026-09-03追加）
   // 問題バンクと「みんなのメモ」「ふりがな辞書」を並行して読み込む（失敗してもアプリ本体は止めない）
   const [ok] = await Promise.all([loadQuestionBank(), loadNotes(), loadRubyDict()]);
   renderSubjectChips();
@@ -3067,6 +3396,7 @@ async function initApp(){
     return; // 問題データが無い状態でアプリ本体を操作させない
   }
   if(Q_FROM_STALE_CACHE) showStaleNotice();
+  maybeShowNews();   // 機能追加のお知らせ（1度だけ・2026-09-03追加）
   if(overlay) overlay.style.display = 'none';
 }
 initApp();
