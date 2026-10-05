@@ -255,7 +255,8 @@ function renderAll(history){
   const kwWrongStudents = {};
   history.forEach(h => {
     const sid = h.studentId;
-    (h.wrongKeywords || []).forEach(k => {
+    // 2026-10-05：キーワードを「/」で分けて1語ずつ数える（10月公開版から1語ずつ送られる。それ以前の記録は「a/b/c」のまとまり）
+    (h.wrongKeywords || []).flatMap(x => String(x).split('/')).map(x => x.trim()).filter(Boolean).forEach(k => {
       kwWrong[k] = (kwWrong[k] || 0) + 1;
       if(!kwWrongStudents[k]) kwWrongStudents[k] = new Set();
       kwWrongStudents[k].add(sid);
