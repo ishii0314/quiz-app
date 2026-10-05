@@ -424,6 +424,15 @@ details.expl>summary::-webkit-details-marker{display:none;}
 details.expl>summary::before{content:"\25B8";margin-right:6px;font-size:11px;}
 details.expl[open]>summary::before{content:"\25BE";}
 details.expl .expl-body{padding:2px 14px 13px;font-size:13px;line-height:1.8;color:var(--ink);white-space:pre-wrap;}
+/* KAISETSU_PATCH_2026_10_05：解説を段落ごとに分けて読みやすくする（確認用HTMLと同じ色分け） */
+details.expl .expl-body{white-space:normal;}
+details.expl .expl-body p{margin:0 0 10px;}
+details.expl .expl-body p:last-child{margin-bottom:0;}
+details.expl .expl-body .ex-lead{font-size:14px;}
+details.expl .expl-body .ex-x{color:var(--muted);font-size:12.5px;margin:0 0 6px;padding-left:10px;border-left:2px solid var(--line);}
+details.expl .expl-body .ex-x + :not(.ex-x){margin-top:12px;}
+details.expl .expl-body .ex-mayoi{background:#FBEDE8;border-left:3px solid var(--clay);padding:10px 12px;border-radius:0 8px 8px 0;}
+details.expl .expl-body .ex-sum{background:#EAF1F8;border-left:3px solid var(--teal);padding:10px 12px;border-radius:0 8px 8px 0;font-weight:600;}
 
 /* ---- 暗記カード（解説末尾の一文から自動生成） ---- */
 .card-add-btn{
@@ -650,12 +659,12 @@ body{background:#f1f4f8;font-family:'Noto Sans JP',sans-serif;font-size:15px}
         </button>
       </div>
       <ul class="news-list">
-        <li><b>続きから解けるようになりました。</b>正解できた問題はもう出ないので、途中でやめても次はその先から始まります。</li>
-        <li><b>問題番号の順に出せます。</b>全問クリアを目指すときに、どこまで進んだか分かります。</li>
-        <li><b>科目ごとの進み具合が見られます。</b>ホームの「正解できた問題」で確認してください。</li>
-        <li><b>選択肢に×をつけられます。</b>「これは違う」と思った選択肢は、右の✕を押すと線が引けます。</li>
+        <li><b>「応用」の問題が1,246問ふえました。</b>まぎらわしい選択肢の問題です。演習の「難易度」で「応用」を選んでください。今までの問題は「基本」です。</li>
+        <li><b>総合問題と介護過程の事例問題が解けます。</b>同じ事例の問題は、続けて出ます。</li>
+        <li><b>キーワードで問題をしぼれるようになりました。</b>演習の「キーワード」に、たとえば「認知症」と入れてください。</li>
+        <li><b>解説が見やすくなりました。</b>まちがえやすいところは「迷いどころ」に、おぼえることは最後の青いわくにまとめています。</li>
       </ul>
-      <div class="news-note">進み具合の記録は今日からです。これまでに解いた分は数に入っていません。</div>
+      <div class="news-note">「応用」が0問のときは、1〜2分待つと新しい問題が届きます。これまでの記録はそのまま残っています。</div>
     </div>
 
     <!-- カルテ処方箋モード（QR ?name=&kw= から開いたときだけ表示） -->
@@ -2481,7 +2490,16 @@ function explanationHtml(q, order){
   let ex = q && q.explanation ? String(q.explanation).trim() : '';
   if(!ex) return '';
   ex = remapExplanationNumbers(ex, order); // 選択肢シャッフル時は画面の並びに番号を合わせる（rubyize前の生テキストに対して行う）
-  const esc = rubyize(ex);
+  // KAISETSU_PATCH_2026_10_05：1行ずつ段落にして、正答・誤答・迷いどころ・まとめを見分けやすくする（表示だけの直し）
+  const lines = ex.split(/\r?\n/).map(t => t.trim()).filter(Boolean);
+  const esc = lines.map((L, i) => {
+    const cls = /^正答は/.test(L) ? 'ex-lead'
+      : /^[✗×]/.test(L) ? 'ex-x'
+      : /^【迷いどころ】/.test(L) ? 'ex-mayoi'
+      : (i === lines.length - 1 && lines.length > 1) ? 'ex-sum'
+      : 'ex-p';
+    return '<p class="' + cls + '">' + rubyize(L) + '</p>';
+  }).join('');
   // 解説の折りたたみの下に「みんなのメモ」（学生投稿・先生承認制）を付ける
   return `<details class="expl"><summary>${icS('bulb', 5)}解説を見る</summary><div class="expl-body">${esc}</div></details>` + notesSectionHtml(q);
 }
@@ -3563,7 +3581,7 @@ if(rxClearBtnEl){
    キーには「どのお知らせまで見たか」を入れる。次に機能を足したときは
    NEWS_ID を新しい日付に変えれば、また1度だけ出るようになる。            */
 const NEWS_KEY = 'quizAppNewsSeen_v1';
-const NEWS_ID  = '2026-09-03';
+const NEWS_ID  = '2026-10-05';   // NEWS_PATCH_2026_10_05：応用の問題などのお知らせ（前のお知らせを閉じた人にも1回出る）
 
 function maybeShowNews(){
   const card = document.getElementById('newsCard');
