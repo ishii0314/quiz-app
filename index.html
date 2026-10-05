@@ -2524,12 +2524,14 @@ function renderCaseQuestion(q){
   const { info, items, shared, prompt } = presentation;
   const total = items.length;
   const label = `事例${Number(info.no.slice(0, -1))}${info.no.slice(-1)}`;
+  const hasPrevious = state.quiz.slice(0, state.idx).some(x => { const i = sogoInfo(x); return i && i.key === info.key; });
   caseViewState.currentId = q.id;
+  document.getElementById('progressText').textContent = `今回の演習 ${state.idx + 1} / ${state.quiz.length} 問`;
   document.getElementById('qSubject').textContent = q.subject;
   document.getElementById('caseTitle').textContent = `${q.subject}　${label}`;
   document.getElementById('caseSubtitle').textContent = `同じ事例で${total}問に答えます。`;
   document.getElementById('casePanelLabel').innerHTML = rubyize('共通の事例');
-  document.getElementById('casePanelNote').textContent = info.k === 1 ? `この事例を読んで、${total}問に答えます。` : '前の問と同じ事例です。';
+  document.getElementById('casePanelNote').textContent = hasPrevious ? '前の問と同じ事例です。' : info.k === 1 ? `この事例を読んで、${total}問に答えます。` : 'この問に共通する事例です。';
   document.getElementById('caseSteps').innerHTML = '';
   for(const item of items){
     const itemInfo = sogoInfo(item);
@@ -2551,7 +2553,6 @@ function renderCaseQuestion(q){
     document.getElementById('caseSteps').append(step);
   }
   document.getElementById('caseStory').innerHTML = caseParagraphs(shared).map(text => `<p>${rubyize(text)}</p>`).join('');
-  const hasPrevious = state.quiz.slice(0, state.idx).some(x => { const i = sogoInfo(x); return i && i.key === info.key; });
   const open = caseViewState.opened.has(q.id) ? caseViewState.opened.get(q.id) : !hasPrevious;
   setCaseViewOpen(open);
   document.getElementById('caseQuestionNumber').textContent = `問${info.k}`;
