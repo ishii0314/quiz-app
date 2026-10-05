@@ -697,6 +697,13 @@ body{background:#f1f4f8;font-family:'Noto Sans JP',sans-serif;font-size:15px}
       <div class="hint" id="partNote"></div>
     </div>
 
+    <div class="chart-card" id="diffCard">
+      <div class="tab-label">難易度</div>
+      <h3>難易度を選ぶ</h3>
+      <div class="diff-row" id="diffChips"></div>
+      <div class="hint" id="diffNote"></div>
+    </div>
+
     <div class="chart-card">
       <div class="tab-label">科目</div>
       <h3>出題する科目を選ぶ</h3>
@@ -1091,20 +1098,60 @@ const QCACHE_FRESH_MS = 7 * 24 * 60 * 60 * 1000;   // 7日以内の控えは「�
 // 【2026-09-01変更】30分→12時間。30分だと授業中に開き直すたび取り直しが走り、結局GASを叩いていた。
 const QCACHE_REFRESH_AFTER_MS = 12 * 60 * 60 * 1000;
 
-function readQuestionCache(){
-  try{
-    const o = JSON.parse(localStorage.getItem(QCACHE_KEY) || 'null');
-    if(!o || !Array.isArray(o.questions) || !o.questions.length) return null;
-    return o;   // { savedAt, questions }
-  }catch(e){ return null; }
+// TSUSHIN_PATCH_2026_10_05：問題の控えは IndexedDB に置く（中級を足すと約190万字になり、localStorageの約5MBに入りきらないおそれがあるため）
+// 読む順：IndexedDB → 今までの localStorage の控え。IndexedDB が使えない端末では今までどおり localStorage に書く。
+const QCACHE_IDB = 'quizAppQuestionCacheDB_v1';   // 新設。生徒の進捗のキーには一切触らない
+function qcacheDb_(){
+  return new Promise((resolve, reject) => {
+    try{
+      if(!window.indexedDB) return reject(new Error('no indexedDB'));
+      const req = indexedDB.open(QCACHE_IDB, 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+      req.onblocked = () => reject(new Error('blocked'));
+    }catch(e){ reject(e); }
+  });
 }
-function writeQuestionCache(questions){
+function qcacheGet_(key){
+  return qcacheDb_().then(db => new Promise((resolve, reject) => {
+    const r = db.transaction('kv', 'readonly').objectStore('kv').get(key);
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  }));
+}
+function qcachePut_(key, val){
+  return qcacheDb_().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(val, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  }));
+}
+function validQuestionCache_(o){
+  return (o && Array.isArray(o.questions) && o.questions.length) ? o : null;   // { savedAt, questions }
+}
+async function readQuestionCache(){
+  try{ const o = validQuestionCache_(await qcacheGet_(QCACHE_KEY)); if(o) return o; }catch(e){}
+  try{ return validQuestionCache_(JSON.parse(localStorage.getItem(QCACHE_KEY) || 'null')); }catch(e){ return null; }
+}
+async function writeQuestionCache(questions){
+  const o = { savedAt: Date.now(), questions: questions };
   try{
-    localStorage.setItem(QCACHE_KEY, JSON.stringify({ savedAt: Date.now(), questions: questions }));
-  }catch(e){ /* 容量超過などは黙って諦める。控えは無くても動く */ }
+    await qcachePut_(QCACHE_KEY, o);
+    try{ localStorage.removeItem(QCACHE_KEY); }catch(e){}   // 古い控えを消して容量を空ける（問題の控えで、生徒の記録ではない）
+    return;
+  }catch(e){}
+  try{ localStorage.setItem(QCACHE_KEY, JSON.stringify(o)); }catch(e){ /* 容量超過などは黙って諦める。控えは無くても動く */ }
 }
 
 function applyQuestions(list){
+  // TSUSHIN_PATCH：キーワードを「/」で分けて1語ずつにする（何度かけても同じ結果）
+  list.forEach(q => {
+    if(Array.isArray(q.keywords))
+      q.keywords = [...new Set(q.keywords.flatMap(k => String(k).split('/')).map(t => t.trim()).filter(Boolean))];
+  });
   ALL_Q = list;
   const badgeEl = document.querySelector('header.top .badge');
   if(badgeEl) badgeEl.textContent = ALL_Q.length + '問';
@@ -1144,14 +1191,14 @@ async function fetchQuestionsWithRetry(quiet){
       if(!quiet) setLoadingMessage('混み合っているようです。もう一度試しています…（' + (i + 1) + '回目）');
       await new Promise(r => setTimeout(r, WAITS[i]));
     }
-    try{ return await fetchQuestionsOnce(20000); }
+    try{ return await fetchQuestionsOnce(45000); }   // TSUSHIN_PATCH：中級を足すと約5.4MBになるため20秒→45秒
     catch(e){ lastErr = e; }
   }
   throw lastErr || new Error('failed');
 }
 
 async function loadQuestionBank(){
-  const cache = readQuestionCache();
+  const cache = await readQuestionCache();
 
   // ① 新しい控えがあるなら即座に表示して、最新版は裏で取り直す
   if(cache && (Date.now() - cache.savedAt) < QCACHE_FRESH_MS){
@@ -1185,7 +1232,7 @@ async function loadQuestionBank(){
     return false;
   }
 }
-const SUBJECTS = ["人間の尊厳と自立","介護の基本","社会の理解","人間関係とコミュニケーション","コミュニケーション技術","生活支援技術","こころとからだのしくみ","発達と老化の理解","認知症の理解","障害の理解","医療的ケア","介護過程"];
+const SUBJECTS = ["人間の尊厳と自立","介護の基本","社会の理解","人間関係とコミュニケーション","コミュニケーション技術","生活支援技術","こころとからだのしくみ","発達と老化の理解","認知症の理解","障害の理解","医療的ケア","介護過程","総合問題"];
 
 let state = {
   selectedSubjects: new Set(),
@@ -1195,6 +1242,7 @@ let state = {
   keyword: '',
   showChoices: true,
   shuffle: true,          // 選択肢の並び順（問題の並び順ではない）
+  difficulty: 'all',      // 難易度えらび（2026-09-09追加）'all' | '1'（基本） | '2'（応用）
   unsolvedOnly: true,     // まだ正解していない問題だけ出す（2026-09-03追加）
   ordered: true,          // 科目→ID順に出す。OFFでランダム（2026-09-03追加）
   count: 10,
@@ -1207,8 +1255,86 @@ let state = {
   answered: false,
 };
 
+// 科目チップ・パートチップに出す件数。いま選ばれている難易度のぶんだけ数える
 function subjectCount(subj){
-  return ALL_Q.filter(q => q.subject === subj).length;
+  return ALL_Q.filter(q => q.subject === subj && matchDifficulty(q)).length;
+}
+
+/* ===== 難易度えらび（2026-09-09追加） ==================================
+   ★判定は「テーマ（difficulty）列」ではなく「出典」から行う。
+   理由：端末の控え（quizAppQuestionCache_v1）は7日もつ。2026-09-09に
+   既存類題1,174問を難易度1へ付け直したが、古い控えを持つ端末では
+   difficulty が旧値（大半が2）のままで、既存の初級が「応用」に混ざってしまう。
+   出典は作ったときから変わらないので、控えの新旧に左右されない。
+     中級（類題1）  → 2（応用・2026-09に作った470問）
+     第N回（類題）   → 1（基本・既存の1,174問）
+     それ以外        → 0（保険。下記のとおり実際には届かない）
+   ※ デプロイ済みのGASは**類題だけを配信している**（2026-09-09に実測。ALL_Qは1,174問で
+     模試の原題500問は入っていない）。手元の`演習アプリ/Code.gs`には絞り込みが書かれて
+     いないので、デプロイ版とズレている（現在地メモ§3が警告していたズレの実例）。
+     よって0を返す枝は実際には通らないが、配信が変わったときの保険として残す。
+   ※ シートのテーマ列に入れた 1／2／原題 は、分析アプリの類題プリント選定
+     （★ミス→難易度1を優先）が使う。用途が別なので両方に意味がある。       */
+const DIFF_KEY = 'quizAppDifficulty_v1';   // 新設。既存の進捗キーには一切触らない
+const DIFF_DEFS = [
+  { v:'all', d:'',  label:'すべて',  sub:'ぜんぶから出す' },
+  { v:'1',   d:'1', label:'基本',    sub:'まずはここから' },
+  { v:'2',   d:'2', label:'応用',    sub:'まぎらわしい問題' },
+];
+
+function qLevel(q){
+  const src = q.source || '';
+  if(src.indexOf('中級') >= 0) return 2;
+  if(src.indexOf('類題') >= 0) return 1;
+  return 0;
+}
+function matchDifficulty(q){
+  return state.difficulty === 'all' || String(qLevel(q)) === state.difficulty;
+}
+function levelCount(v){
+  const base = ALL_Q.slice();
+  if(v === 'all') return base.length;
+  return base.filter(q => String(qLevel(q)) === v).length;
+}
+
+function loadDifficulty(){
+  try{
+    const v = localStorage.getItem(DIFF_KEY);
+    if(v === 'all' || v === '1' || v === '2') state.difficulty = v;
+  }catch(e){ /* 読めなくても既定値で動く */ }
+}
+function saveDifficulty(){
+  try{ localStorage.setItem(DIFF_KEY, state.difficulty); }catch(e){}
+}
+
+function renderDifficultyChips(){
+  const el = document.getElementById('diffChips');
+  if(!el) return;
+  el.innerHTML = '';
+  DIFF_DEFS.forEach(def => {
+    const n = levelCount(def.v);
+    const chip = document.createElement('div');
+    chip.className = 'diff-chip' + (state.difficulty === def.v ? ' on' : '');
+    if(def.d) chip.dataset.d = def.d;
+    chip.innerHTML = `${def.label}<small>${def.sub}／${n}問</small>`;
+    chip.addEventListener('click', () => {
+      state.difficulty = def.v;
+      saveDifficulty();
+      renderDifficultyChips();
+      renderSubjectChips();
+      renderPartChips();   // パートの件数も難易度に連動させる
+      updateMatchCount();
+    });
+    el.appendChild(chip);
+  });
+  const note = document.getElementById('diffNote');
+  if(note){
+    note.textContent = state.difficulty === 'all'
+      ? '基本と応用の両方から出します。'
+      : (state.difficulty === '1'
+          ? '選択肢がはっきり分かれる問題です。基礎を固めるときはこちら。'
+          : '選択肢どうしが似ていて、知識がないと選べない問題です。');
+  }
 }
 
 function extractRoundNumber(source){
@@ -1222,7 +1348,6 @@ function renderRoundChips(){
   if(!document.getElementById('roundChips')) return; // 回フィルターは廃止
   const rounds = new Set();
   ALL_Q.forEach(q => {
-    if(q.subject === '総合問題') return;
     const r = extractRoundNumber(q.source);
     if(r !== null) rounds.add(r);
   });
@@ -1230,7 +1355,7 @@ function renderRoundChips(){
   const el = document.getElementById('roundChips');
   el.innerHTML = '';
   sorted.forEach(r => {
-    const count = ALL_Q.filter(q => q.subject !== '総合問題' && extractRoundNumber(q.source) === r).length;
+    const count = ALL_Q.filter(q => extractRoundNumber(q.source) === r).length;
     const chip = document.createElement('div');
     chip.className = 'chip';
     chip.innerHTML = `第${r}回<span class="cnt">(${count})</span>`;
@@ -1264,7 +1389,7 @@ const PARTS = [
     subjects:['介護過程','総合問題'] },
 ];
 
-// このアプリに収録している科目だけを取り出す（総合問題は未収録）
+// このアプリに収録している科目だけを取り出す（総合問題は2026-09-30に中級180問を収録）
 function partAvailableSubjects(p){
   return p.subjects.filter(s => SUBJECTS.indexOf(s) >= 0);
 }
@@ -1342,7 +1467,7 @@ function renderSubjectChips(){
 let KEYWORD_FREQ = [];
 function buildKeywordFreq(){
   const counts = {};
-  ALL_Q.filter(q => q.subject !== '総合問題').forEach(q => q.keywords.forEach(k => { counts[k] = (counts[k]||0) + 1; }));
+  ALL_Q.slice().forEach(q => q.keywords.forEach(k => { counts[k] = (counts[k]||0) + 1; }));
   KEYWORD_FREQ = Object.entries(counts).sort((a,b) => b[1]-a[1]);
 }
 
@@ -1921,7 +2046,7 @@ document.getElementById('countRange').addEventListener('input', e => {
 });
 
 function getFilteredPool(){
-  let pool = ALL_Q.filter(q => q.subject !== '総合問題');
+  let pool = ALL_Q.filter(q => matchDifficulty(q));
   if(state.selectedRounds.size > 0){
     pool = pool.filter(q => state.selectedRounds.has(extractRoundNumber(q.source)));
   }
@@ -2137,14 +2262,51 @@ document.getElementById('idSearchInput').addEventListener('input', e => renderSe
 //    （その結果0問になったら、範囲をそのままにして全部から出す＝手が止まらないように）
 // ② 並び：state.ordered なら科目→ID順の先頭からn問、そうでなければランダムにn問
 function pickQuestions(pool, n){
-  let target = pool;
+  // SOGO_PATCH_2026_09_30：総合問題は事例ごとのまとまり（1問目→2問目→3問目）で出す。
+  // 2問目の問いの文が1問目の答えを明かすことがあるため、順番を崩さず、途中で切らない。
+  const units = buildSogoUnits(pool);
+  let target = units;
   if(state.unsolvedOnly){
-    const rest = pool.filter(q => !SOLVED.has(q.id));
-    if(rest.length > 0) target = rest;   // 全問正解済みのときは元のpoolのまま
+    // 1問でも未正解の問題がある事例は、3問そろえて出す（ishiiさん決定②）
+    const rest = units.filter(u => u.some(q => !SOLVED.has(q.id)));
+    if(rest.length > 0) target = rest;   // 全問正解済みのときは元のまま
   }
-  const count = Math.min(n, target.length);
-  return state.ordered ? sortByCourse(target).slice(0, count)
-                       : shuffleArr(target).slice(0, count);
+  const ordered = state.ordered
+    ? target.slice().sort((a, b) => { const x = sortByCourse([a[0], b[0]]); return x[0] === a[0] ? -1 : 1; })
+    : shuffleArr(target);
+  // 事例の途中で切らないよう、まとまりごとに詰める（n を超える事例は飛ばして、後ろの小さいまとまりで埋める）
+  const out = [];
+  for(const u of ordered){
+    if(out.length >= n) break;
+    if(out.length + u.length <= n || out.length === 0) out.push(...u);
+  }
+  return out;
+}
+
+// 事例問題の事例を読む（2026-10-01：介護過程の事例問題「過01A-1」にも広げた）
+// ID「中級（類題1）-総01A-1」→ { key:'総01A', no:'01A', k:1 }／「中級（類題1）-過01A-1」→ { key:'過01A', no:'01A', k:1 }
+function sogoInfo(q){
+  const m = String(q && q.id || '').match(/-(総|過)(\d+[A-Z])-(\d+)$/);
+  return m ? { key: m[1] + m[2], no: m[2], k: Number(m[3]) } : null;
+}
+// 問題の並びを「まとまり」の配列にする。総合問題は同じ事例をひとまとめ（何問目の順）、ほかは1問ずつ
+function buildSogoUnits(pool){
+  const units = [], byCase = {};
+  pool.forEach(q => {
+    const info = sogoInfo(q);
+    if(!info){ units.push([q]); return; }
+    if(!byCase[info.key]){ byCase[info.key] = []; units.push(byCase[info.key]); }
+    byCase[info.key].push(q);
+  });
+  Object.keys(byCase).forEach(key => byCase[key].sort((a, b) => sogoInfo(a).k - sogoInfo(b).k));
+  return units;
+}
+// 画面に出す「事例1A　3問中2問目」
+function sogoLabel(q){
+  const info = sogoInfo(q);
+  if(!info) return '';
+  const total = ALL_Q.filter(x => { const i = sogoInfo(x); return i && i.key === info.key; }).length;
+  return `事例${String(Number(info.no.slice(0, -1)))}${info.no.slice(-1)}　${total}問中${info.k}問目`;
 }
 
 // 現在の絞り込み（科目・キーワード・処方箋）でそのまま演習を開始する共通処理
@@ -2189,7 +2351,7 @@ function renderQuestion(){
   document.getElementById('liveScore').textContent = `正解 ${state.history.filter(h=>h && h.correct===true).length}`;
   document.getElementById('progressFill').style.width = `${(state.idx/state.quiz.length)*100}%`;
 
-  document.getElementById('qSubject').textContent = q.subject;
+  { const lb = sogoLabel(q); document.getElementById('qSubject').textContent = lb ? q.subject + '　' + lb : q.subject; }
   document.getElementById('feedbackArea').innerHTML = '';
 
   document.getElementById('answerBtn').textContent = '解答する';
@@ -3265,7 +3427,7 @@ function renderQuickScopeNote(){
 document.getElementById('quickStartBtn').onclick = () => {
   const pool = quickStartHasFilter()
     ? getFilteredPool()
-    : ALL_Q.filter(q => q.subject !== '総合問題');
+    : ALL_Q.slice();
   if(pool.length === 0) return;
   const n = Math.min(getDailyGoal(), pool.length);
   state.quiz = pickQuestions(pool, n);   // 「今日の分」も未正解・順番の設定に従う（2026-09-03）
@@ -3398,6 +3560,8 @@ async function initApp(){
   loadSolved();   // 正解できた問題の記録を端末から読む（2026-09-03追加）
   // 問題バンクと「みんなのメモ」「ふりがな辞書」を並行して読み込む（失敗してもアプリ本体は止めない）
   const [ok] = await Promise.all([loadQuestionBank(), loadNotes(), loadRubyDict()]);
+  loadDifficulty();            // 前回えらんだ難易度を端末から読む（2026-09-09追加）
+  renderDifficultyChips();
   renderSubjectChips();
   renderPartChips();
   buildKeywordFreq();
