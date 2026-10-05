@@ -582,6 +582,42 @@ body{background:#f1f4f8;font-family:'Noto Sans JP',sans-serif;font-size:15px}
 @media(max-width:360px){.ui-toolbar .ui-tool{white-space:nowrap}.ui-toolbar .ui-tool:first-child{min-width:44px}.ui-toolbar .ui-tool:first-child>span{display:none}}
 
 </style>
+<style id="case-view-20261006">
+/* CASE_VIEW_2026_10_06: 総合問題・介護過程の連続する事例問題 */
+.case-view[hidden],.case-story[hidden],.case-question-heading[hidden]{display:none!important;}
+.case-view{margin-bottom:20px;}
+.case-title{font-family:inherit;font-size:20px;font-weight:700;line-height:1.5;margin:0 0 4px;color:var(--ink);}
+.case-subtitle{font-size:13px;color:var(--muted);margin:0 0 14px;}
+.case-steps{list-style:none;display:flex;gap:8px;padding:0;margin:0 0 18px;}
+.case-step{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border-bottom:3px solid var(--line);padding:8px 0;color:var(--muted);font-size:14px;}
+.case-step-number{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:25px;height:25px;border:1px solid currentColor;border-radius:50%;font-size:12px;}
+.case-step[aria-current="step"]{color:var(--teal);border-color:var(--teal);font-weight:700;}
+.case-step.done{color:var(--muted);border-color:var(--teal);}
+.case-step-now{font-size:11px;margin-left:auto;white-space:nowrap;}
+.case-panel{background:var(--hover-soft);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px;}
+.case-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.case-panel-label{font-size:16px;font-weight:700;color:var(--teal);}
+.case-panel-note{font-size:12px;color:var(--muted);margin-top:4px;}
+.case-toggle{background:var(--card);color:var(--teal);border:1px solid var(--line);border-radius:var(--r-sm);font:inherit;font-size:13px;min-height:44px;padding:8px 12px;cursor:pointer;flex-shrink:0;}
+.case-toggle:focus-visible{outline:3px solid var(--teal);outline-offset:3px;}
+.case-story{font-size:18px;line-height:2.1;white-space:pre-wrap;margin-top:18px;}
+.case-story p{margin:0 0 14px;}
+.case-story p:last-child{margin-bottom:0;}
+.case-question-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px;}
+.case-question-heading h3{font-family:inherit;font-size:20px;line-height:1.5;font-weight:700;color:var(--teal);margin:0;}
+.case-question-heading span{font-size:12px;color:var(--muted);}
+.ui-shell .case-story{font-size:18px;line-height:2.1;}
+@media(max-width:600px){
+  .case-panel{padding:16px 14px;}
+  .case-title{font-size:18px;}
+  .case-step{font-size:13px;gap:6px;}
+  .case-step-now{display:none;}
+  .case-story,.ui-shell .case-story{font-size:17px;line-height:2.1;}
+  .case-question-heading h3{font-size:18px;}
+  .case-question-heading{flex-wrap:wrap;gap:4px;}
+}
+
+</style>
 </head>
 <body>
 <div id="loadingOverlay" style="position:fixed;inset:0;background:var(--paper);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;">
@@ -887,10 +923,25 @@ body{background:#f1f4f8;font-family:'Noto Sans JP',sans-serif;font-size:15px}
     <div class="progress-text" id="progressText" style="margin-bottom:8px;">問1 / 10</div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
 
+
+    <section class="case-view" id="caseView" aria-label="事例と進み具合" hidden>
+      <h2 class="case-title" id="caseTitle"></h2>
+      <p class="case-subtitle" id="caseSubtitle"></p>
+      <ol class="case-steps" id="caseSteps" aria-label="この事例の進み具合"></ol>
+      <div class="case-panel">
+        <div class="case-panel-head">
+          <div><div class="case-panel-label" id="casePanelLabel"></div><div class="case-panel-note" id="casePanelNote"></div></div>
+          <button type="button" class="case-toggle" id="caseToggle" aria-expanded="true" aria-controls="caseStory">事例を閉じる ⌃</button>
+        </div>
+        <div class="case-story" id="caseStory"></div>
+      </div>
+    </section>
+
     <div class="q-card" id="qCard">
       <div class="q-meta">
         <div class="q-subject" id="qSubject">科目</div>
       </div>
+      <div class="case-question-heading" id="caseQuestionHeading" hidden><h3 id="caseQuestionNumber"></h3><span id="caseQuestionCount"></span></div>
       <div class="q-text" id="qText"></div>
 
       <div id="choiceArea"></div>
@@ -2388,6 +2439,132 @@ function showScreen(name){
   }
 }
 
+// CASE_VIEW_2026_10_06. 表示だけを扱う。保存キー・通信・採点・出題順は変更しない。
+const caseViewState = { bank: null, groups: new Map(), quiz: null, opened: new Map(), currentId: null };
+
+function sharedCaseText(questions){
+  if(questions.length < 2) return '';
+  let prefix = String(questions[0].question || '');
+  for(const q of questions.slice(1)){
+    const text = String(q.question || '');
+    let end = 0;
+    while(end < prefix.length && end < text.length && prefix[end] === text[end]) end++;
+    prefix = prefix.slice(0, end);
+  }
+  // 共通の全文だけを分ける。後の問いで追加された状況や、問いの途中の共通語は先に見せない。
+  const end = prefix.lastIndexOf('。');
+  return end >= 0 ? prefix.slice(0, end + 1) : '';
+}
+
+function caseParagraphs(text){
+  // 同じ文字列を文単位で段落にする。正解の手掛かりになる選別や強調は加えない。
+  const sentences = String(text).match(/[^。]*。|[^。]+$/g) || [];
+  const paragraphs = [];
+  let part = '';
+  for(const sentence of sentences){
+    if(part && part.length + sentence.length > 140){ paragraphs.push(part); part = ''; }
+    part += sentence;
+  }
+  if(part) paragraphs.push(part);
+  return paragraphs;
+}
+
+function getCasePresentation(q){
+  const info = sogoInfo(q);
+  if(!info) return null;
+  if(caseViewState.bank !== ALL_Q){
+    caseViewState.bank = ALL_Q;
+    caseViewState.groups = new Map();
+    ALL_Q.forEach(item => {
+      const itemInfo = sogoInfo(item);
+      if(!itemInfo) return;
+      if(!caseViewState.groups.has(itemInfo.key)) caseViewState.groups.set(itemInfo.key, []);
+      caseViewState.groups.get(itemInfo.key).push(item);
+    });
+    for(const items of caseViewState.groups.values()) items.sort((a,b) => sogoInfo(a).k - sogoInfo(b).k);
+    for(const [key, items] of caseViewState.groups) caseViewState.groups.set(key, { items, shared: sharedCaseText(items) });
+  }
+  const group = caseViewState.groups.get(info.key);
+  if(!group || !group.shared || !String(q.question).startsWith(group.shared)) return null;
+  const prompt = String(q.question).slice(group.shared.length);
+  if(!prompt.trim()) return null;
+  return { info, items: group.items, shared: group.shared, prompt };
+}
+
+function setCaseViewOpen(open){
+  const story = document.getElementById('caseStory');
+  const button = document.getElementById('caseToggle');
+  story.hidden = !open;
+  button.setAttribute('aria-expanded', String(open));
+  button.textContent = open ? '事例を閉じる ⌃' : '事例を読む ⌄';
+  if(caseViewState.currentId) caseViewState.opened.set(caseViewState.currentId, open);
+}
+document.getElementById('caseToggle').onclick = () => setCaseViewOpen(document.getElementById('caseStory').hidden);
+
+function renderCaseQuestion(q){
+  const previousId = caseViewState.currentId;
+  const view = document.getElementById('caseView');
+  const heading = document.getElementById('caseQuestionHeading');
+  const presentation = getCasePresentation(q);
+  const next = state.quiz[state.idx + 1];
+  const nextInfo = next && sogoInfo(next);
+  const nextButton = document.getElementById('nextBtn');
+  nextButton.textContent = '次の問題へ';
+  caseViewState.currentId = null;
+  view.hidden = !presentation;
+  heading.hidden = !presentation;
+  if(!presentation){
+    document.getElementById('qText').innerHTML = rubyize(q.question);
+    return;
+  }
+  if(caseViewState.quiz !== state.quiz){
+    caseViewState.quiz = state.quiz;
+    caseViewState.opened = new Map();
+  }
+  const { info, items, shared, prompt } = presentation;
+  const total = items.length;
+  const label = `事例${Number(info.no.slice(0, -1))}${info.no.slice(-1)}`;
+  caseViewState.currentId = q.id;
+  document.getElementById('qSubject').textContent = q.subject;
+  document.getElementById('caseTitle').textContent = `${q.subject}　${label}`;
+  document.getElementById('caseSubtitle').textContent = `同じ事例で${total}問に答えます。`;
+  document.getElementById('casePanelLabel').innerHTML = rubyize('共通の事例');
+  document.getElementById('casePanelNote').textContent = info.k === 1 ? `この事例を読んで、${total}問に答えます。` : '前の問と同じ事例です。';
+  document.getElementById('caseSteps').innerHTML = '';
+  for(const item of items){
+    const itemInfo = sogoInfo(item);
+    const index = state.quiz.findIndex(x => x.id === item.id);
+    const done = index >= 0 && !!state.history[index];
+    const current = item.id === q.id;
+    const step = document.createElement('li');
+    step.className = 'case-step' + (done && !current ? ' done' : '');
+    if(current) step.setAttribute('aria-current', 'step');
+    const number = document.createElement('span');
+    number.className = 'case-step-number';
+    number.textContent = done && !current ? '✓' : itemInfo.k;
+    step.append(number, document.createTextNode(`問${itemInfo.k}`));
+    if(done && !current) step.setAttribute('aria-label', `問${itemInfo.k} 解答済み`);
+    if(current){
+      const here = document.createElement('small');
+      here.className = 'case-step-now'; here.textContent = 'いまここ'; step.append(here);
+    }
+    document.getElementById('caseSteps').append(step);
+  }
+  document.getElementById('caseStory').innerHTML = caseParagraphs(shared).map(text => `<p>${rubyize(text)}</p>`).join('');
+  const hasPrevious = state.quiz.slice(0, state.idx).some(x => { const i = sogoInfo(x); return i && i.key === info.key; });
+  const open = caseViewState.opened.has(q.id) ? caseViewState.opened.get(q.id) : !hasPrevious;
+  setCaseViewOpen(open);
+  document.getElementById('caseQuestionNumber').textContent = `問${info.k}`;
+  document.getElementById('caseQuestionCount').textContent = `この事例の ${info.k} / ${total} 問`;
+  document.getElementById('qText').innerHTML = rubyize(prompt);
+  if(nextInfo && nextInfo.key === info.key) nextButton.textContent = `同じ事例の問${nextInfo.k}へ →`;
+  else if(nextInfo) nextButton.textContent = '次の事例へ →';
+  // 問いが切り替わったら、選択肢の下に留まらず新しい問いの上から読めるようにする。
+  if(previousId !== q.id) requestAnimationFrame(() => {
+    if(caseViewState.currentId === q.id && document.getElementById('screen-quiz').classList.contains('active')) window.scrollTo({top:0,behavior:'instant'});
+  });
+}
+
 function renderQuestion(){
   const q = state.quiz[state.idx];
   const entry = state.history[state.idx];
@@ -2413,7 +2590,7 @@ function renderQuestion(){
   choiceArea.style.display = 'none';
 
   if(q.choices && q.choices.length){
-    document.getElementById('qText').innerHTML = rubyize(q.question);
+    renderCaseQuestion(q);
     choiceArea.style.display = 'block';
     let order = entry ? entry.order : q.choices.map((c,i)=>i+1);
     if(!entry && state.shuffle) order = shuffleArr(order);
