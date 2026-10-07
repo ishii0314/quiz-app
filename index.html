@@ -1643,6 +1643,7 @@ function escHtml(s){
 const RUBY_KEY = 'quizAppRubyOn_v1';
 let RUBY_DICT = null;
 let RUBY_RE = null;
+let RUBY_CTX = {}; // RUBY_CTX_PATCH_2026_10_08
 
 function getRubyPref(){
   try{
@@ -1660,11 +1661,19 @@ async function loadRubyDict(){
     if(!res.ok) throw new Error('ruby_dict.json なし');
     const data = await res.json();
     RUBY_DICT = data.dict || {};
-    const terms = Object.keys(RUBY_DICT).sort((a,b)=> b.length - a.length);
+    // RUBY_CTX_PATCH_2026_10_08：「前⦅本体⦆後」の形の語は、本文では「前本体後」と照合し、本体だけにふりがなを付ける
+    const ctx = {}, surf = new Set();
+    for (const k of Object.keys(RUBY_DICT)) {
+      const m = /^([^⦅⦆]*)⦅([^⦅⦆]+)⦆([^⦅⦆]*)$/.exec(k);
+      if (m) { const s = m[1] + m[2] + m[3]; if (!(s in RUBY_DICT)) { ctx[s] = [m[1], m[2], m[3], RUBY_DICT[k]]; surf.add(s); } }
+      else if (k.indexOf('⦅') < 0 && k.indexOf('⦆') < 0) surf.add(k);
+    }
+    RUBY_CTX = ctx;
+    const terms = [...surf].sort((a,b)=> b.length - a.length);
     const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     RUBY_RE = terms.length ? new RegExp(terms.map(escRe).join('|'), 'g') : null;
   }catch(e){
-    RUBY_DICT = null; RUBY_RE = null; // 読めなくてもふりがな無しで演習は続けられる
+    RUBY_DICT = null; RUBY_RE = null; RUBY_CTX = {}; // 読めなくてもふりがな無しで演習は続けられる
   }
 }
 
@@ -1672,7 +1681,7 @@ async function loadRubyDict(){
 function rubyize(text){
   const esc = escHtml(text);
   if(!RUBY_RE) return esc;
-  return esc.replace(RUBY_RE, m => `<ruby>${m}<rt>${RUBY_DICT[m]}</rt></ruby>`);
+  return esc.replace(RUBY_RE, m => { const c = RUBY_CTX[m]; return c ? `${c[0]}<ruby>${c[1]}<rt>${c[3]}</rt></ruby>${c[2]}` : `<ruby>${m}<rt>${RUBY_DICT[m]}</rt></ruby>`; });
 }
 
 /* ============================================================
